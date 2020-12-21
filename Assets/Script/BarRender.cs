@@ -30,9 +30,9 @@ public class BarRender : MonoBehaviour, IRender<Unit, BarState, IBarAction> {
 
         var centerPos = rightPos + (leftPos - rightPos) * 0.5f;
         return new BarState {
-            barPosition = centerPos,
+            barPosition = BarPosition.Center,
             canMove = false,
-            movePos = new BarMovePos {
+            movePos = new MovePos {
                 leftPos = leftPos,
                 centerPos = centerPos,
                 rightPos = rightPos
@@ -44,33 +44,53 @@ public class BarRender : MonoBehaviour, IRender<Unit, BarState, IBarAction> {
     }
 
     public void Render(BarState state) {
-        barTransform.anchoredPosition = state.barPosition;
+        barTransform.anchoredPosition = state.GetPosition();
     }
 }
 
 /// <summary>
-///   バーが動く位置
+///   バーやボール(x方向)が動く位置
 /// </summary>
-public struct BarMovePos : IEquatable<BarMovePos> {
+public struct MovePos : IEquatable<MovePos> {
     public Vector2 leftPos;
     public Vector2 centerPos;
     public Vector2 rightPos;
 
-    public bool Equals(BarMovePos other) {
+    public bool Equals(MovePos other) {
         return leftPos == other.leftPos &&
             centerPos == other.centerPos &&
             rightPos == other.rightPos;
     }
+
+    public Vector2 GetPos(BarPosition pos) {
+        switch(pos) {
+            case BarPosition.Left:
+                return leftPos;
+            case BarPosition.Center:
+                return centerPos;
+            case BarPosition.Right:
+                return rightPos;
+            default:
+                throw new PatternMatchNotFoundException(pos);
+        }
+    }
 }
 
 public struct BarState : IEquatable<BarState> {
-    public BarMovePos movePos;
-    public Vector2 barPosition;
+    public MovePos movePos;
+    public BarPosition barPosition;
 
     /// <summary>
     ///   バーが動かせるかどうか
     /// </summary>
     public bool canMove;
+
+    /// <summary>
+    ///   バーの座標を取得します。
+    /// </summary>
+    public Vector2 GetPosition() {
+        return movePos.GetPos(barPosition);
+    }
 
     public bool Equals(BarState other) {
         return movePos.Equals(other.movePos) &&
@@ -99,7 +119,7 @@ public class MoveBar : IBarAction {
 ///   バーの左右の位置を更新します。
 /// </summary>
 public struct UpdateInitialBarPos : IBarAction {
-    public BarMovePos movePos;
+    public MovePos movePos;
 }
 
 public class BarUpdate : IUpdate<BarState, IBarAction>{
@@ -117,22 +137,7 @@ public class BarUpdate : IUpdate<BarState, IBarAction>{
         if (!state.canMove) {
             return state;
         }
-        Vector2 pos;
-        var movePos = state.movePos;
-        switch(msg.position) {
-            case BarPosition.Left:
-                pos = movePos.leftPos;
-                break;
-            case BarPosition.Center:
-                pos = movePos.centerPos;
-                break;
-            case BarPosition.Right:
-                pos = movePos.rightPos;
-                break;
-            default:
-                throw new PatternMatchNotFoundException(msg.position);
-        }
-        state.barPosition = pos;
+        state.barPosition = msg.position;
         return state;
     }
 }

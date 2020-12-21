@@ -30,7 +30,7 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
             ballState = ballRender.CreateState(ballInstantiatePos),
             barState = barInitState,
             barInitState = barInitState,
-            uiState = uiRender.CreateState(Unit.Default)
+            uiState = uiRender.CreateState(Unit.Default),
         };
     }
 
@@ -246,9 +246,10 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
                 state.gameState = GameState.GameOver;
                 break;
             case OnCollisionBar colBar:
-                // ボールを一番上に移動させる
+                // ボールを一番上に移動させる(x方向はランダム)
                 // スコアをアップさせる
-                var ballPos = new Vector2(state.barState.movePos.centerPos.x, state.ballInitState.position.y);
+                var ballXPos = state.barState.movePos.GetPos(RandomEnum<BarPosition>.GetRandom()).x;
+                var ballPos = new Vector2(ballXPos, state.ballInitState.position.y);
                 state.ballState.position = ballPos;
                 state.uiState = uiUpdate.Update(state.uiState, Singleton<IncScore>.Instance);
                 break;
