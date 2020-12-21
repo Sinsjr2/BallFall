@@ -458,9 +458,9 @@ RectTransform:
   m_Father: {fileID: 656432683}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 380}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: 0, y: -50}
   m_SizeDelta: {x: 1, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!212 &829120674
@@ -542,7 +542,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5119fe43819a1aa2aa0a28ada18a4168, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: {x: 0, y: -150}
+  speed: {x: 0, y: -400}
 --- !u!50 &829120677
 Rigidbody2D:
   serializedVersion: 4
@@ -1178,7 +1178,7 @@ MonoBehaviour:
   barRender: {fileID: 1519133240}
   ballRender: {fileID: 829120676}
   uiRender: {fileID: 838293477}
-  ballInstantiatePos: {x: 0, y: 380}
+  ballInstantiatePos: {x: 0, y: -50}
 --- !u!1 &2056603844
 GameObject:
   m_ObjectHideFlags: 0
