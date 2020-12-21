@@ -2,51 +2,6 @@ using System;
 using UnityEngine;
 using UnityEngine.Events;
 
-
-public class TEA_Main : MonoBehaviour {
-    class MyUnionButtonRender : ButtonRender<IMyUnion> {}
-    public void TestButton(){
-
-        // new AOTProblemExample().Error();;
-        // return;
-
-        // Resolver<MyState> resolver = new MyUnionUpdate();
-        // Debug.Log(resolver.GetInstance<A>());
-
-        // GenericInterface a = new Imple1Interface();
-        // Debug.Log(a.GetInstance<int>().value);
-        // a.DoSomething("あいうえお");
-        // return;
-
-        // Profiler.BeginSample("AllocCheck: Creation");
-        // var component = new TEA<MyState, IMyUnion, MyUnionUpdate>(new MyUnionUpdate());
-        // Profiler.EndSample();
-
-        // var go = new GameObject().AddComponent<MyUnionButtonRender>();
-
-        // Profiler.BeginSample("AllocCheck: Dispach");
-        // for(int i = 0; i < 1000; i++) {
-        //     IDispacher<IMyUnion> o = component;
-        //     var b = new B {value = 100.0f};
-        //     go.OnClick(o, b);
-        //     Profiler.EndSample();
-        //     IDispacher<IMyUnion> c = component;
-        //     c.Dispach(new A { hoge = 9 });
-        //     c.Dispach(new B { value = 4.7f });
-        // }
-
-        // Debug.Log(component.currentState.MyToString());
-    }
-
-    void Dummy() {
-        // new MyUnionUpdate().GetInstance<A>();
-        // new MyUnionUpdate().GetInstance<B>();
-    //             var component = new TEA<MyState, IMyUnion, MyUnionUpdate>(new MyUnionUpdate());
-    //             component.Dispach(new A());
-    }
-}
-
-
 public class Box<T> {
     public T value;
 

@@ -50,42 +50,6 @@ public enum Unit {
     Default
 }
 
-// TEA で処理する部分
-/*
-public class TEA<State, Message, Resolver, U>: IDispacher<Message> where Resolver : Resolver<State> {
-    public State currentState => d.currentState;
-    // Resolver updateResolver;
-    IRender<State, Message, Unit> render;
-
-    InnerDispacher<State, Message> d;
-
-    /// <summary>
-    ///   レンダーを呼び出し中かどうか
-    /// </summary>
-    bool isCallingRender = false;
-
-    public TEA(Resolver r) {
-        d = new InnerDispacher<State, Message> {updateResolver = r};
-        // updateResolver = r;
-    }
-
-
- /// <summary>
-    ///   ジェネリックにしているのはボックス化を避けるため
-    /// </summary>
-    public void Dispach<T>(T msg) where T : struct, Message {
-        d.Dispach(msg);
-        // var prevState = currentState;
-        // currentState = updateResolver.GetInstance<T>().Update(prevState, msg);
-        // if (!isCallingRender) {
-        //     isCallingRender = true;
-        //     // render.Render(currentState, this);
-
-        //     isCallingRender = false;
-        // }
-    }
-}*/
-
 public class TEA<Input, State, Act> : IDispacher<Act> where  State : IEquatable<State> {
     State currentState;
 
@@ -244,61 +208,5 @@ public static class ActionWrapper {
         return new ActionWrapper<Input, Before, After>(dispacher, dispach);
     }
 
-}
-
-/*
-public interface ActionWrapper<After> {
-
-    AfterT Map<Before, AfterT>(Before action) where AfterT : struct, After;
-}
-*/
-
-
-// ↑↑↑↑↑↑ TEA ↑↑↑↑↑↑↑
-
-public interface IMyUnion {}
-
-struct A : IMyUnion {
-    public int hoge;
-}
-
-struct B : IMyUnion {
-    public float value;
-}
-public class HogeD {
-
-    public WrapMyUnion<T> foo<T>(T msg) where T : IMyUnion {
-        return new WrapMyUnion<T> { inner = msg };
-    }
-}
-
-public struct WrapMyUnion<Inner> : IMyUnion where Inner : IMyUnion {
-    public Inner inner;
-}
-
-struct MyState {
-    public int sum;
-    public float floatSum;
-
-    public string MyToString() {
-        return $"int Sum: {sum}, float Sum {floatSum}";
-    }
-}
-
-
-class MyUnionUpdate : Resolver<MyState>, IUpdate<MyState, A>, IUpdate<MyState, B>  {
-    public IUpdate<MyState, Message> GetInstance<Message>() {
-        return (IUpdate<MyState, Message>)this;
-    }
-
-    public MyState Update(MyState state, A msg) {
-        state.sum += msg.hoge;
-        return state;
-    }
-
-    public MyState Update(MyState state, B msg) {
-        state.floatSum -= msg.value;
-        return state;
-    }
 }
 
