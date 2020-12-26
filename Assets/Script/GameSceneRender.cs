@@ -182,7 +182,7 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
                 dispacher, (d, act) => d.Dispach(new WrapUIAction {action = act})));
     }
 
-    void Destory() {
+    void OnDestroy() {
         ballRender.Clear();
     }
 
