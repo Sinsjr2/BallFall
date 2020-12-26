@@ -25,8 +25,6 @@ public class BarRender : MonoBehaviour, IRender<Unit, BarState, IBarAction> {
     RectTransform barTransform;
 
     public BarState CreateState(Unit initial) {
-        Assert.AreNotEqual(leftPos, Vector2.zero);
-        Assert.AreNotEqual(rightPos, Vector2.zero);
 
         var centerPos = rightPos + (leftPos - rightPos) * 0.5f;
         return new BarState {
@@ -39,7 +37,9 @@ public class BarRender : MonoBehaviour, IRender<Unit, BarState, IBarAction> {
             } };
     }
 
-    public void Setup(BarState state, IDispacher<IBarAction> dispacher) {
+    public void Setup(Unit _, IDispacher<IBarAction> dispacher) {
+        Assert.AreNotEqual(leftPos, Vector2.zero);
+        Assert.AreNotEqual(rightPos, Vector2.zero);
         barTransform = (RectTransform)transform;
     }
 

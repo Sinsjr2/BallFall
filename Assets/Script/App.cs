@@ -16,6 +16,7 @@ public class App : MonoBehaviour {
             Unit.Default,
             Singleton<InitGame>.Instance,
             gameSceneRender,
+            gameSceneRender,
             new GameSceneUpdate());
 
         inputSubscription.dispacher = new ActionWrapper<IGameSceneAction, ChangedInput>(tea, (dispacher, act) => {

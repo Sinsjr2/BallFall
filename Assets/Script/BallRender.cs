@@ -6,7 +6,7 @@ using UnityEngine.Assertions;
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 [DisallowMultipleComponent]
-public class BallRender : MonoBehaviour , IRender<Vector2, BallState, IBallAction> {
+public class BallRender : MonoBehaviour , IRender<Unit, BallState, IBallAction> {
 
     IDispacher<IBallAction> dispach;
 
@@ -24,7 +24,7 @@ public class BallRender : MonoBehaviour , IRender<Vector2, BallState, IBallActio
         return new BallState { position = instancePos, speed = speed, movesBall = false };
     }
 
-    public void Setup(BallState state, IDispacher<IBallAction> dispacher) {
+    public void Setup(Unit _, IDispacher<IBallAction> dispacher) {
         this.dispach = dispacher;
         ballTransform = (RectTransform)transform;
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 public interface Resolver<State> {
     IUpdate<State, Message> GetInstance<Message>();
@@ -12,18 +13,20 @@ public class Singleton<T> where T : new() {
     public static T Instance = new T();
 }
 
-
-public interface IRender<Input, State, Act> {
+public interface StateInitializer <Input, State> {
     /// <summary>
     ///   状態の作成を行います。
     ///   Unityであるとインスペクターから設定した値を初期値とする場合が多いのでこのようにしています。
     /// </summary>
     State CreateState(Input initial);
+}
+
+public interface IRender<Input, State, Act> {
 
     /// <summary>
     ///   レンダの初期化を行います。
     /// </summary>
-    void Setup(State state, IDispacher<Act> dispacher);
+    void Setup(Input input, IDispacher<Act> dispacher);
 
     /// <summary>
     ///   stateの状態に従い描画を行います。
@@ -50,17 +53,17 @@ public enum Unit {
     Default
 }
 
-public class TEA<Input, State, Act> : IDispacher<Act> where  State : IEquatable<State> {
+public class TEA<Input, State, Act> : IDispacher<Act> {
     State currentState;
 
-    IRender<Input, State, Act> render;
-    IUpdate<State, Act> update;
+    readonly IRender<Input, State, Act> render;
+    readonly IUpdate<State, Act> update;
     bool isCallingRender = false;
 
     /// <summary>
-    ///   dispachが２回以上呼ばれたか
+    ///   実行するべきアクション
     /// </summary>
-    bool isCalledMore2 = false;
+    readonly List<Act> actions = new List<Act>(16);
 
     /// <summary>
     ///   レンダリングする上限回数。
@@ -72,53 +75,51 @@ public class TEA<Input, State, Act> : IDispacher<Act> where  State : IEquatable<
     public TEA(Input initial,
                Act firstAct,
                IRender<Input, State, Act> render,
+               StateInitializer<Input, State> initializer,
                IUpdate<State, Act> update) {
 
         this.render = render;
         this.update = update;
 
-        currentState = this.render.CreateState(initial);
-        this.render.Setup(currentState, this);
+        currentState = initializer.CreateState(initial);
+        this.render.Setup(initial, this);
         Dispach(firstAct);
     }
 
     public void Dispach(Act msg) {
-        var newState = update.Update(currentState, msg);
         if (isCallingRender) {
-            currentState = newState;
-            isCalledMore2 = true;
-            return;
-        }
-        bool noRendering = newState.Equals(currentState);
-        // レンダリングに使用しないだけで変更されているフィールドがあるかもしれないので更新する
-        currentState = newState;
-        if (noRendering) {
+            actions.Add(msg);
             return;
         }
         isCallingRender = true;
-
         try {
+            var newState = update.Update(currentState, msg);
+            render.Render(newState);
             // 無限ループを回避するため
             // レンダリングした回数
             for (int renderCount = 0; true; renderCount++) {
                 if (maxRendering < renderCount) {
                     throw new InvalidOperationException($"レンダリングが指定された回数以上行われました。最大回数:{maxRendering}/n現在の状態:{currentState}");
                 }
+                foreach (var a in actions) {
+                    newState = update.Update(newState, a);
+                }
+                actions.Clear();
                 render.Render(newState);
-                // レンダー呼び出し中にStateが変更されたか
-                bool isChanged = isCalledMore2 && !newState.Equals(currentState);
-                if (!isChanged) {
+                // レンダー呼び出し中にdispacherが呼ばれたかが変更されたか
+                if (actions.Count <= 0) {
                     break;
                 }
-                newState = currentState;
             }
+            currentState = newState;
         } finally {
             // 例外が発生したあとでもdispachが呼び出せるようにしておく
             isCallingRender = false;
-            isCalledMore2 = false;
+            actions.Clear();
         }
     }
 }
+
 
 /// <summary>
 ///   Switch case で見つからなかった場合
