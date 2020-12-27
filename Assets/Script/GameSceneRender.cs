@@ -55,6 +55,16 @@ public struct RenderCache<T, Input, State, Act> : IRender<Input, State, Act>
 public struct MonoBehaviourRenderFactory<T, Input, State, Act>
     where T : MonoBehaviour, IRender<Input, State, Act> {
 
+    struct DispacherAndRender {
+        public T render;
+        public ActionWrapper<int, KeyValuePair<int, Act>, Act> dispacher;
+
+        public DispacherAndRender(T render, ActionWrapper<int, KeyValuePair<int, Act>, Act> dispacher) {
+            this.render = render;
+            this.dispacher = dispacher;
+        }
+    }
+
     /// <summary>
     ///   必ず設定する必要があります。
     /// </summary>
@@ -65,9 +75,9 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act>
     /// <summary>
     ///   今までに作成されたrenderのキャッシュ
     /// </summary>
-    List<T> cachedRender;
+    List<DispacherAndRender> cachedRender;
 
-    IDispacher<Act> dispacher;
+    IDispacher<KeyValuePair<int, Act>> dispacher;
 
     Func<IDispacher<Act>, T, T> initializer;
 
@@ -76,10 +86,10 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act>
         return render;
     }
 
-    public void Setup(Func<IDispacher<Act>, T, T> initializer, IDispacher<Act> dispacher) {
+    public void Setup(Func<IDispacher<Act>, T, T> initializer, IDispacher<KeyValuePair<int, Act>> dispacher) {
         Assert.IsNotNull(render);
         this.initializer = initializer;
-        cachedRender = new List<T>();
+        cachedRender = new List<DispacherAndRender>();
         this.dispacher = dispacher;
     }
 
@@ -88,16 +98,19 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act>
     /// </summary>
     public void Render(List<State> state) {
         using (var e = state.GetEnumerator()) {
+            int index = 0;
             // キャッシュからrenderを呼び出す
             foreach (var r in cachedRender) {
+                index++;
                 // ステートがあるうちはrenderに渡す
                 if (e.MoveNext()) {
-                    r.gameObject.SetActive(true);
-                    r.Render(e.Current);
+                    r.render.gameObject.SetActive(true);
+                    r.dispacher.value = index;
+                    r.render.Render(e.Current);
                 } else {
                     // 不要な分はgameobjectをNonActiveにすることで持っておく
                     // １つでもdisableなオブジェクトを見つけるとあとはすべてdisableになっていると仮定する
-                    var go = r.gameObject;
+                    var go = r.render.gameObject;
                     if (!go.activeSelf) {
                         break;
                     }
@@ -106,9 +119,16 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act>
             }
             // 足りない分をインスタンス化する
             while (e.MoveNext()) {
+                index++;
                 var go = GameObject.Instantiate(render);
-                cachedRender.Add(go);
-                go = initializer(dispacher, go);
+                var pair = new DispacherAndRender(
+                    go,
+                    new ActionWrapper<int, KeyValuePair<int, Act>, Act>(
+                        dispacher, (d, i, act) =>
+                        d.Dispach(new KeyValuePair<int, Act>(i, act))));
+                pair.dispacher.value = index;
+                cachedRender.Add(pair);
+                go = initializer(pair.dispacher, go);
                 go.Render(e.Current);
             }
         }
@@ -119,7 +139,7 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act>
     /// </summary>
     public void Clear() {
         foreach(var r in cachedRender) {
-            GameObject.Destroy(r.gameObject);
+            GameObject.Destroy(r.render.gameObject);
         }
         cachedRender.Clear();
     }
@@ -135,6 +155,12 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
 
     [SerializeField]
     RenderCache<UIRender, Unit, UIState, IUIAction> uiRender;
+
+    /// <summary>
+    ///   ボールの生成するかの判定に使用します。
+    /// </summary>
+    [SerializeField]
+    Canvas canvas;
 
     /// <summary>
     ///   ボールの親として設定するオブジェクト
@@ -154,6 +180,7 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
         return new GameSceneState {
             ballInitState = ballInitState,
             ballState = new []{ ballRender.GetRender().CreateState(ballInstantiatePos) }.ToList(),
+            ballGenerator = null,
             barState = barInitState,
             barInitState = barInitState,
             uiState = uiRender.GetRender().CreateState(Unit.Default),
@@ -168,8 +195,9 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
                 ballRender.transform.SetParent(ballRenderParent, false);
                 return ballRender;
             },
-            new ActionWrapper<IGameSceneAction, IBallAction>(
-                dispacher, (d, act) => d.Dispach(new WrapBallAction {action = act})));
+            new ActionWrapper<IGameSceneAction, KeyValuePair<int, IBallAction>>(
+                dispacher, (d, indexAndAct) => d.Dispach(new WrapBallAction {
+                        id = indexAndAct.Key, action = indexAndAct.Value})));
 
         barRender.Setup(
             Unit.Default,
@@ -209,7 +237,16 @@ public struct GameSceneState {
     ///   ボールをインスタンス化するのに必要な初期状態
     /// </summary>
     public BallState ballInitState;
+
+    /// <summary>
+    ///   表示しているボール
+    /// </summary>
     public List<BallState> ballState;
+
+    /// <summary>
+    ///   次に表示するボタンを作ります。
+    /// </summary>
+    public BallGenerator? ballGenerator;
 
     /// <summary>
     ///   バーをインスタンス化するのに必要な初期設定
@@ -219,6 +256,48 @@ public struct GameSceneState {
 
     public GameState gameState;
     public UIState uiState;
+
+    /// <summary>
+    ///   ボールの生成をするかどうかを判定するために使用するキャンバスの現在の大きさ
+    /// </summary>
+    public Vector2 canvasSize;
+}
+
+/// <summary>
+///   ボールが見えるようになると生成します。
+/// </summary>
+public struct BallGenerator {
+
+    /// <summary>
+    ///   次に生成するボール(前のボールからの相対的な距離)
+    /// </summary>
+    readonly float nextBallrelativeYPos;
+
+    /// <summary>
+    ///   生成予定座標(前ボールとの相対座標)からオブジェクトを生成します。
+    /// </summary>
+    public BallGenerator(float ballPos) {
+        nextBallrelativeYPos = ballPos;
+    }
+
+    /// <summary>
+    ///   画面に入る位置であれば、ボールのy座標を生成します。
+    /// </summary>
+    public float? MaybeGenerate(Vector2 canvasSize, BallState ballState) {
+        if (ballState.position.y + nextBallrelativeYPos <= canvasSize.y) {
+            // 表示範囲に入った時
+            return nextBallrelativeYPos;
+        }
+        return null;
+    }
+
+    /// <summary>
+    ///   ランダムなy位置でボールを生成します。
+    /// </summary>
+    public static BallGenerator RandomPos(float min, float max) {
+        Assert.IsTrue(min <= max);
+        return new BallGenerator(UnityEngine.Random.Range(min, max));
+    }
 }
 
 public interface IGameSceneAction {}
