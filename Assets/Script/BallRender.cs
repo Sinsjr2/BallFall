@@ -70,11 +70,6 @@ public class OnOutOfArea : IBallAction {
 }
 
 /// <summary>
-///   ボールを消滅させます。
-/// </summary>
-// public class Destroy : IBallAction {}
-
-/// <summary>
 ///   ボール１つの状態
 /// </summary>
 public struct BallState : System.IEquatable<BallState> {
