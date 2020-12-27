@@ -452,9 +452,9 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
                 // このとき、ボールとバーを動かないようにする
                 state.uiState = uiUpdate.Update(state.uiState, Singleton<ToGameOverUI>.Instance);
                 {
-                    var ballST = state.ballState[0];
+                    var ballST = state.ballState[msg.id];
                     ballST.movesBall = false;
-                    state.ballState[0] = ballST;
+                    state.ballState[msg.id] = ballST;
                 }
                 state.barState.canMove = false;
                 state.gameState = GameState.GameOver;
@@ -465,9 +465,9 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
                 var ballXPos = state.barState.movePos.GetPos(RandomEnum<BarPosition>.GetRandom()).x;
                 var ballPos = new Vector2(ballXPos, state.ballInitState.position.y);
                 {
-                    var ballST = state.ballState[0];
+                    var ballST = state.ballState[msg.id];
                     ballST.position = ballPos;
-                    state.ballState[0] = ballST;
+                    state.ballState[msg.id] = ballST;
                 }
                 state.uiState = uiUpdate.Update(state.uiState, Singleton<IncScore>.Instance);
                 break;
@@ -475,7 +475,7 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
                 // do nothing
                 break;
         }
-        state.ballState[0] = ballUpdate.Update(state.ballState[0], msg.action);
+        state.ballState[msg.id] = ballUpdate.Update(state.ballState[msg.id], msg.action);
         return state;
     }
 
