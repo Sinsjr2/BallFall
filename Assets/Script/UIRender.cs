@@ -53,7 +53,8 @@ public struct UIState : IEquatable<UIState> {
 
     public bool Equals(UIState other) {
         return statusMessage == other.statusMessage &&
-            showMessage == other.showMessage;
+            showMessage == other.showMessage &&
+            score == other.score;
     }
 }
 
