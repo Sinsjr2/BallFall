@@ -101,7 +101,6 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act>
             int index = 0;
             // キャッシュからrenderを呼び出す
             foreach (var r in cachedRender) {
-                index++;
                 // ステートがあるうちはrenderに渡す
                 if (e.MoveNext()) {
                     r.render.gameObject.SetActive(true);
@@ -116,10 +115,10 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act>
                     }
                     go.SetActive(false);
                 }
+                index++;
             }
             // 足りない分をインスタンス化する
-            while (e.MoveNext()) {
-                index++;
+            for (;e.MoveNext(); index++) {
                 var go = GameObject.Instantiate(render);
                 var pair = new DispacherAndRender(
                     go,
