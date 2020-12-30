@@ -1041,6 +1041,7 @@ MonoBehaviour:
       type: 3}
   uiRender:
     render: {fileID: 838293477}
+  canvasRect: {fileID: 835127613}
   ballRenderParent: {fileID: 656432683}
   ballInstantiatePos: {x: 0, y: -50}
 --- !u!1 &2056603844

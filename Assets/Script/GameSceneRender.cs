@@ -89,6 +89,8 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act>
     public void Setup(Func<IDispacher<Act>, T, T> initializer, IDispacher<KeyValuePair<int, Act>> dispacher) {
         Assert.IsNotNull(render);
         this.initializer = initializer;
+        // 以前に初期化しているかもしれないのでリセットする
+        Clear();
         cachedRender = new List<DispacherAndRender>();
         this.dispacher = dispacher;
     }
@@ -97,6 +99,8 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act>
     ///   引数の配列は先頭から順番にrenderに渡していきます。
     /// </summary>
     public void Render(List<State> state) {
+        // 先にSetupを呼ぶ必要がある
+        Assert.IsNotNull(cachedRender);
         using (var e = state.GetEnumerator()) {
             int index = 0;
             // キャッシュからrenderを呼び出す
@@ -137,8 +141,14 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act>
     ///   キャッシュを消します。
     /// </summary>
     public void Clear() {
+        if (ReferenceEquals(cachedRender, null)) {
+            return;
+        }
         foreach(var r in cachedRender) {
-            GameObject.Destroy(r.render.gameObject);
+            // オブジェクトが破棄されていないときのみ処理する
+            if (r.render) {
+                GameObject.Destroy(r.render.gameObject);
+            }
         }
         cachedRender.Clear();
     }
@@ -159,7 +169,7 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
     ///   ボールの生成するかの判定に使用します。
     /// </summary>
     [SerializeField]
-    Canvas canvas;
+    RectTransform canvasRect;
 
     /// <summary>
     ///   ボールの親として設定するオブジェクト
@@ -173,21 +183,33 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
     [SerializeField]
     Vector2 ballInstantiatePos;
 
+    DimensionsChangedNotification notification;
+
+    IDispacher<IGameSceneAction> dispacher;
+
     public GameSceneState CreateState(Unit initial) {
         var ballInitState = ballRender.GetRender().CreateState(ballInstantiatePos);
         var barInitState = barRender.GetRender().CreateState(Unit.Default);
         return new GameSceneState {
             ballInitState = ballInitState,
             ballState = new []{ ballRender.GetRender().CreateState(ballInstantiatePos) }.ToList(),
-            ballGenerator = null,
+            ballGenerator = BallGenerator.RandomPos(100, 200),
             barState = barInitState,
             barInitState = barInitState,
             uiState = uiRender.GetRender().CreateState(Unit.Default),
         };
     }
 
+    void OnChangedCanvas() {
+        dispacher.Dispach(new OnChangedCanvasSize {canvasSize = canvasRect.sizeDelta});
+    }
+
     public void Setup(Unit _, IDispacher<IGameSceneAction> dispacher) {
         Assert.IsNotNull(ballRenderParent);
+        Assert.IsNotNull(canvasRect);
+        this.dispacher = dispacher;
+        notification = canvasRect.gameObject.AddComponent<DimensionsChangedNotification>();
+        notification.AddHandler(OnChangedCanvas);
         ballRender.Setup(
             (d, ballRender) => {
                 ballRender.Setup(Unit.Default, d);
@@ -211,6 +233,7 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
 
     void OnDestroy() {
         ballRender.Clear();
+        notification.RemoveHander(OnChangedCanvas);
     }
 
     public void Render(GameSceneState state) {
@@ -239,6 +262,7 @@ public struct GameSceneState {
 
     /// <summary>
     ///   表示しているボール
+    ///   一番最後の要素が最新の生成したボールです。
     /// </summary>
     public List<BallState> ballState;
 
@@ -270,7 +294,7 @@ public struct BallGenerator {
     /// <summary>
     ///   次に生成するボール(前のボールからの相対的な距離)
     /// </summary>
-    readonly float nextBallrelativeYPos;
+    public readonly float nextBallrelativeYPos;
 
     /// <summary>
     ///   生成予定座標(前ボールとの相対座標)からオブジェクトを生成します。
@@ -316,6 +340,13 @@ public class WrapBallAction : IGameSceneAction {
 }
 
 /// <summary>
+///   キャンバスのサイズが変化したことを通知します。
+/// </summary>
+public class OnChangedCanvasSize : IGameSceneAction {
+    public Vector2 canvasSize;
+}
+
+/// <summary>
 ///   キー入力があった時
 /// </summary>
 public class OnInput : IGameSceneAction {
@@ -344,6 +375,8 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
                 return Update(state, ballAction);
             case WrapUIAction uiAction:
                 return Update(state, uiAction);
+            case OnChangedCanvasSize size:
+                return Update(state, size);
             default:
                 throw new PatternMatchNotFoundException(msg);
         }
@@ -370,6 +403,11 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
         state.ballState[0] = ballST;
 
         state.gameState = GameState.Playing;
+        return state;
+    }
+
+    GameSceneState Update(GameSceneState state, OnChangedCanvasSize size) {
+        state.canvasSize = size.canvasSize;
         return state;
     }
 
@@ -430,10 +468,7 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
     ///   ゲームを一時停止します。
     /// </summary>
     GameSceneState PauseGame(GameSceneState state) {
-        var ballST = state.ballState[0];
-        ballST.movesBall = false;
-        state.ballState[0] = ballST;
-
+        SetMovableToAllBall(state.ballState, false);
         state.barState.canMove = false;
         state.uiState = uiUpdate.ToPauseUI(state.uiState);
         state.gameState = GameState.Pausing;
@@ -445,37 +480,76 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
         return state;
     }
 
+    /// <summary>
+    ///   最後の要素を取得します。要素がなければ例外が発生します。
+    /// </summary>
+    static T GetLast<T>(List<T> xs) {
+        return xs[xs.Count - 1];
+    }
+
+    /// <summary>
+    ///   すべてのボールに対してボールが動くことができるかどうかを設定します。
+    /// </summary>
+    static void SetMovableToAllBall(List<BallState> balls, bool canMove) {
+        for (int i = 0; i < balls.Count; i++) {
+            var ballST = balls[i];
+            ballST.movesBall = canMove;
+            balls[i] = ballST;
+        }
+    }
+
     GameSceneState Update(GameSceneState state, WrapBallAction msg) {
+        state.ballState[msg.id] = ballUpdate.Update(state.ballState[msg.id], msg.action);
         switch (msg.action) {
             case OnOutOfArea _:
                 // ボールが画面外に出たらゲームオーバー
                 // このとき、ボールとバーを動かないようにする
                 state.uiState = uiUpdate.Update(state.uiState, Singleton<ToGameOverUI>.Instance);
-                {
-                    var ballST = state.ballState[msg.id];
-                    ballST.movesBall = false;
-                    state.ballState[msg.id] = ballST;
-                }
+                SetMovableToAllBall(state.ballState, false);
                 state.barState.canMove = false;
                 state.gameState = GameState.GameOver;
                 break;
             case OnCollisionBar colBar:
-                // ボールを一番上に移動させる(x方向はランダム)
+                // ボールを削除する
+                state.ballState.RemoveAt(msg.id);
                 // スコアをアップさせる
-                var ballXPos = state.barState.movePos.GetPos(RandomEnum<BarPosition>.GetRandom()).x;
-                var ballPos = new Vector2(ballXPos, state.ballInitState.position.y);
-                {
-                    var ballST = state.ballState[msg.id];
-                    ballST.position = ballPos;
-                    state.ballState[msg.id] = ballST;
-                }
                 state.uiState = uiUpdate.Update(state.uiState, Singleton<IncScore>.Instance);
+                // もしこれが最後のボールであれば、表示できなくてもボールを生成する。
+                if (state.ballState.Count <= 0) {
+                    if (state.ballGenerator.HasValue) {
+                        var ballXPos = state.barState.movePos.GetPos(RandomEnum<BarPosition>.GetRandom()).x;
+                        // ボールを生成する(yの相対位置、x方向はランダム)
+                        var ballPos = new Vector2(ballXPos, state.ballGenerator.Value.nextBallrelativeYPos);
+                        var newBall = state.ballInitState;
+                        newBall.movesBall = true;
+                        newBall.position = ballPos;
+
+                        state.ballState.Add(newBall);
+                        state.ballGenerator = BallGenerator.RandomPos(50, 300);
+                    }
+                }
+                break;
+            case NextFrame _:
+                if (state.ballState.Count <= 0) {
+                    break;
+                }
+                var nextPos = state.ballGenerator?.MaybeGenerate(state.canvasSize, GetLast(state.ballState));
+                if (nextPos.HasValue) {
+                    state.ballGenerator = BallGenerator.RandomPos(50, 300);
+                    var ballXPos = state.barState.movePos.GetPos(RandomEnum<BarPosition>.GetRandom()).x;
+                    // ボールを生成する(yの相対位置、x方向はランダム)
+                    var ballPos = new Vector2(ballXPos, nextPos.Value);
+                    var newBall = state.ballInitState;
+                    newBall.movesBall = true;
+                    newBall.position = ballPos;
+
+                    state.ballState.Add(newBall);
+                }
                 break;
             default:
                 // do nothing
                 break;
         }
-        state.ballState[msg.id] = ballUpdate.Update(state.ballState[msg.id], msg.action);
         return state;
     }
 
