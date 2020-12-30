@@ -4,13 +4,6 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-[Serializable]
-public struct Hoge<T> {
-    public int hoge;
-    public GameObject obj;
-    public T value;
-}
-
 /// <summary>
 ///   前回書き込んだ状態と比較して、異なっていればRenderを呼び出すようにします。
 /// </summary>
