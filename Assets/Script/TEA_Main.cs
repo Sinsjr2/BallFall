@@ -1,5 +1,4 @@
 using System;
-using UnityEngine;
 using UnityEngine.Events;
 
 public class Box<T> {
@@ -7,17 +6,6 @@ public class Box<T> {
 
     public Box(T value) {
         this.value = value;
-    }
-}
-
-public class ColliderRender : MonoBehaviour {
-
-    object dispach = null;
-
-    public void OnCollisionEnterAction<Msg, Initial, T>(IDispacher<Msg> dispach,
-                                                        Initial initial,
-                                                        Func<Initial, Collider, T> createMsg) where T : Msg {
-        this.dispach = dispach;
     }
 }
 
