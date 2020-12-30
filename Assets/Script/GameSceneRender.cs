@@ -181,20 +181,17 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
     IDispacher<IGameSceneAction> dispacher;
 
     public GameSceneState CreateState(Unit initial) {
-        var ballInitState = ballRender.GetRender().CreateState(ballInstantiatePos);
+        var ballInitState = ballRender.GetRender().CreateState(new Vector2(ballInstantiatePos.x, canvasRect.sizeDelta.y));
         var barInitState = barRender.GetRender().CreateState(Unit.Default);
         return new GameSceneState {
             ballInitState = ballInitState,
-            ballState = new []{ ballRender.GetRender().CreateState(ballInstantiatePos) }.ToList(),
+            ballState = new []{ ballInitState }.ToList(),
             ballGenerator = BallGenerator.RandomPos(100, 200),
             barState = barInitState,
             barInitState = barInitState,
+            canvasSize = canvasRect.sizeDelta,
             uiState = uiRender.GetRender().CreateState(Unit.Default),
         };
-    }
-
-    void OnChangedCanvas() {
-        dispacher.Dispach(new OnChangedCanvasSize {canvasSize = canvasRect.sizeDelta});
     }
 
     public void Setup(Unit _, IDispacher<IGameSceneAction> dispacher) {
@@ -202,7 +199,8 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
         Assert.IsNotNull(canvasRect);
         this.dispacher = dispacher;
         notification = canvasRect.gameObject.AddComponent<DimensionsChangedNotification>();
-        notification.AddHandler(OnChangedCanvas);
+        notification.AddHandler(
+            () => dispacher.Dispach(new OnChangedCanvasSize {canvasSize = canvasRect.sizeDelta}));
         ballRender.Setup(
             (d, ballRender) => {
                 ballRender.Setup(Unit.Default, d);
@@ -226,7 +224,7 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
 
     void OnDestroy() {
         ballRender.Clear();
-        notification.RemoveHander(OnChangedCanvas);
+        notification.ClearHandler();
     }
 
     public void Render(GameSceneState state) {
@@ -398,7 +396,9 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
     }
 
     GameSceneState Update(GameSceneState state, OnChangedCanvasSize size) {
+        Debug.Log(state.canvasSize);
         state.canvasSize = size.canvasSize;
+        Debug.Log(size.canvasSize);
         return state;
     }
 
@@ -507,39 +507,42 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
                 state.uiState = uiUpdate.Update(state.uiState, Singleton<IncScore>.Instance);
                 // もしこれが最後のボールであれば、表示できなくてもボールを生成する。
                 if (state.ballState.Count <= 0) {
-                    if (state.ballGenerator.HasValue) {
-                        var ballXPos = state.barState.movePos.GetPos(RandomEnum<BarPosition>.GetRandom()).x;
-                        // ボールを生成する(yの相対位置、x方向はランダム)
-                        var ballPos = new Vector2(ballXPos, state.ballGenerator.Value.nextBallrelativeYPos);
-                        var newBall = state.ballInitState;
-                        newBall.movesBall = true;
-                        newBall.position = ballPos;
-
-                        state.ballState.Add(newBall);
-                        state.ballGenerator = BallGenerator.RandomPos(50, 300);
-                    }
+                    state = MaybeRandomGenerateBall(state);
                 }
                 break;
             case NextFrame _:
                 if (state.ballState.Count <= 0) {
                     break;
                 }
-                var nextPos = state.ballGenerator?.MaybeGenerate(state.canvasSize, GetLast(state.ballState));
-                if (nextPos.HasValue) {
-                    state.ballGenerator = BallGenerator.RandomPos(50, 300);
-                    var ballXPos = state.barState.movePos.GetPos(RandomEnum<BarPosition>.GetRandom()).x;
-                    // ボールを生成する(yの相対位置、x方向はランダム)
-                    var ballPos = new Vector2(ballXPos, nextPos.Value);
-                    var newBall = state.ballInitState;
-                    newBall.movesBall = true;
-                    newBall.position = ballPos;
-
-                    state.ballState.Add(newBall);
-                }
+                state = MaybeRandomGenerateBall(state);
                 break;
             default:
                 // do nothing
                 break;
+        }
+        return state;
+    }
+
+    /// <summary>
+    ///   ボールの間隔、x座標に関してランダムにボールを生成します。これは、ゲームが実行中のみ機能します。
+    /// </summary>
+    static GameSceneState MaybeRandomGenerateBall(GameSceneState state) {
+        if (state.gameState != GameState.Playing) {
+            return state;
+        }
+
+        var latestBall = GetLast(state.ballState);
+        var nextPos = state.ballGenerator?.MaybeGenerate(state.canvasSize, latestBall);
+        if (nextPos.HasValue) {
+            state.ballGenerator = BallGenerator.RandomPos(50, 300);
+            var ballXPos = state.barState.movePos.GetPos(RandomEnum<BarPosition>.GetRandom()).x;
+            // ボールを生成する(yの相対位置、x方向はランダム)
+            var ballPos = new Vector2(ballXPos, latestBall.position.y + nextPos.Value);
+            var newBall = state.ballInitState;
+            newBall.movesBall = true;
+            newBall.position = ballPos;
+
+            state.ballState.Add(newBall);
         }
         return state;
     }
