@@ -134,7 +134,7 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act>
     ///   キャッシュを消します。
     /// </summary>
     public void Clear() {
-        if (ReferenceEquals(cachedRender, null)) {
+        if (cachedRender is null) {
             return;
         }
         foreach(var r in cachedRender) {

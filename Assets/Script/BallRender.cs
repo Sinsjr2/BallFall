@@ -36,10 +36,10 @@ public class BallRender : MonoBehaviour , IRender<Unit, BallState, IBallAction> 
     }
 
     void OnCollisionEnter2D(Collision2D collision) {
-        if (!ReferenceEquals(null, collision.gameObject.GetComponent<BallAreaOutCollider>())) {
+        if (!(collision.gameObject.GetComponent<BallAreaOutCollider>() is null)) {
             dispach.Dispach(Singleton<OnOutOfArea>.Instance);
         }
-        if (!ReferenceEquals(null, collision.gameObject.GetComponent<BarRender>())) {
+        if (!(collision.gameObject.GetComponent<BarRender>() is null)) {
             dispach.Dispach(Singleton<OnCollisionBar>.Instance);
         }
     }

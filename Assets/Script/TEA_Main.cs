@@ -21,7 +21,7 @@ public class UnityEventRender<Action> : IDisposable {
     }
 
     public void Dispose() {
-        if (!ReferenceEquals(action, null)) {
+        if (!(action is null)) {
             unityEvent.RemoveListener(action);
         }
     }
@@ -35,14 +35,14 @@ public class UnityEventRender<Action> : IDisposable {
         this.dispach = dispach;
         var v = value as Box<T>;
         // アロケーションを避けるために同じオブジェクトを使いまわす
-        if (ReferenceEquals(v, null)) {
+        if (v is null) {
             v = new Box<T>(msg);
         } else {
             v.value = msg;
         }
         // このクラス内でしか、コールバックの登録を追加したり、外したりすることを想定していない。
         // よって、一度だけ登録するようにする
-        if (ReferenceEquals(action, null)) {
+        if (action is null) {
             action = Listner<T>;
             unityEvent.AddListener(action);
         }
