@@ -391,9 +391,7 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
     GameSceneState PlayGameUpdate(GameSceneState state) {
         state.uiState = uiUpdate.Update(state.uiState, Singleton<ToGamePlayUI>.Instance);
         state.barState.canMove = true;
-        var ballST = state.ballState[0];
-        ballST.movesBall = true;
-        state.ballState[0] = ballST;
+        SetMovableToAllBall(state.ballState, true);
 
         state.gameState = GameState.Playing;
         return state;
