@@ -21,5 +21,12 @@ public class DimensionsChangedNotification: UnityEngine.EventSystems.UIBehaviour
     {
         handler -= handler;
     }
+
+    /// <summary>
+    ///   ハンドラに登録してあったメソッドを消します。
+    /// </summary>
+    public void ClearHandler() {
+        handlers = () => {};
+    }
     #endregion
 }
