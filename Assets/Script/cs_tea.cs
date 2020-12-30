@@ -130,36 +130,6 @@ public class PatternMatchNotFoundException : Exception {
         : base ($"{notFoundValue}はcaseに存在しません"){}
 }
 
-class InnerDispacher<State, Message> {
-
-    public State currentState;
-    public Resolver<State> updateResolver;
-    bool isCallingRender = false;
-
-    public void Dispach<T>(T msg) where T : struct, Message {
-        var prevState = currentState;
-        currentState = updateResolver.GetInstance<T>().Update(prevState, msg);
-        if (!isCallingRender) {
-            isCallingRender = true;
-            // render.Render(currentState, this);
-
-            isCallingRender = false;
-        }
-    }
-}
-
-interface DispachResolver {
-    Dispacher<Message> GetInstance<Message>();
-}
-
-class Dispacher<Message> {
-
-    DispachResolver resolver;
-
-    public void Dispach<T>(T msg) where T : Message {
-        resolver.GetInstance<Message>().Dispach(msg);;
-    }
-}
 
 public interface IDispacher<Act> {
     void Dispach(Act act);
