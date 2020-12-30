@@ -45,7 +45,8 @@ public struct RenderCache<T, Input, State, Act> : IRender<Input, State, Act>
 ///   Renderの前に毎回呼び出すわけではないので注意してください。
 /// </summary>
 [Serializable]
-public struct MonoBehaviourRenderFactory<T, Input, State, Act>
+public struct MonoBehaviourRenderFactory<T, Input, State, Act> :
+    IRender<Func<IDispacher<Act>, T, T>, List<State>, KeyValuePair<int, Act>>
     where T : MonoBehaviour, IRender<Input, State, Act> {
 
     struct DispacherAndRender {
