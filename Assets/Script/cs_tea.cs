@@ -1,10 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-public interface Resolver<State> {
-    IUpdate<State, Message> GetInstance<Message>();
-}
-
 public interface IUpdate<State, Act> {
     State Update(State state, Act act);
 }
