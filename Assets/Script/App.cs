@@ -19,7 +19,7 @@ public class App : MonoBehaviour {
             gameSceneRender,
             new GameSceneUpdate());
 
-        inputSubscription.dispacher = new ActionWrapper<IGameSceneAction, ChangedInput>(tea, (dispacher, act) => {
+        inputSubscription.dispacher = tea.Wrap<IGameSceneAction, ChangedInput>((dispacher, act) => {
             dispacher.Dispach(new OnInput{ state = act.state });
         });
     }

@@ -163,14 +163,14 @@ public class ActionWrapper<Before, After> : IDispacher<After> {
 }
 
 public static class ActionWrapper {
-    public static ActionWrapper<Before, After> Create<Before, After>(
-        IDispacher<Before> dispacher,
+    public static ActionWrapper<Before, After> Wrap<Before, After>(
+        this IDispacher<Before> dispacher,
         Action<IDispacher<Before>, After> dispach) {
         return new ActionWrapper<Before, After>(dispacher, dispach);
     }
 
-    public static ActionWrapper<Input, Before, After> Create<Input, Before, After>(
-        IDispacher<Before> dispacher,
+    public static ActionWrapper<Input, Before, After> Wrap<Input, Before, After>(
+        this IDispacher<Before> dispacher,
         Action<IDispacher<Before>, Input, After> dispach) {
         return new ActionWrapper<Input, Before, After>(dispacher, dispach);
     }

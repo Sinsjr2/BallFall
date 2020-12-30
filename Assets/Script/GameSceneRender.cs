@@ -119,9 +119,8 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act>
                 var go = GameObject.Instantiate(render);
                 var pair = new DispacherAndRender(
                     go,
-                    new ActionWrapper<int, KeyValuePair<int, Act>, Act>(
-                        dispacher, (d, i, act) =>
-                        d.Dispach(new KeyValuePair<int, Act>(i, act))));
+                    dispacher.Wrap<int, KeyValuePair<int, Act>, Act>(
+                        (d, i, act) => d.Dispach(new KeyValuePair<int, Act>(i, act))));
                 pair.dispacher.value = index;
                 cachedRender.Add(pair);
                 go = initializer(pair.dispacher, go);
@@ -209,19 +208,19 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
                 ballRender.transform.SetParent(ballRenderParent, false);
                 return ballRender;
             },
-            new ActionWrapper<IGameSceneAction, KeyValuePair<int, IBallAction>>(
-                dispacher, (d, indexAndAct) => d.Dispach(new WrapBallAction {
+            dispacher.Wrap<IGameSceneAction, KeyValuePair<int, IBallAction>>(
+                (d, indexAndAct) => d.Dispach(new WrapBallAction {
                         id = indexAndAct.Key, action = indexAndAct.Value})));
 
         barRender.Setup(
             Unit.Default,
-            new ActionWrapper<IGameSceneAction, IBarAction>(
-                dispacher, (d, act) => d.Dispach(new WrapBarAction {action = act})));
+            dispacher.Wrap<IGameSceneAction, IBarAction>(
+                (d, act) => d.Dispach(new WrapBarAction {action = act})));
 
         uiRender.Setup(
             Unit.Default,
-            new ActionWrapper<IGameSceneAction, IUIAction>(
-                dispacher, (d, act) => d.Dispach(new WrapUIAction {action = act})));
+            dispacher.Wrap<IGameSceneAction, IUIAction>(
+                (d, act) => d.Dispach(new WrapUIAction {action = act})));
     }
 
     void OnDestroy() {
