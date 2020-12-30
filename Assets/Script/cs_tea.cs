@@ -1,9 +1,5 @@
 using System;
 
-public class Singleton<T> where T : new() {
-    public static T Instance = new T();
-}
-
 public interface StateInitializer <Input, State> {
     /// <summary>
     ///   状態の作成を行います。
