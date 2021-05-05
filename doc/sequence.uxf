@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.3.0">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLSequenceAllInOne</id>
+    <coordinates>
+      <x>0</x>
+      <y>0</y>
+      <w>1890</w>
+      <h>680</h>
+    </coordinates>
+    <panel_attributes>title=TEA Lifecycle
+autoTick=false
+obj=cliant~cliant ACTOR EXECUTION
+obj=TEA~tea
+obj=IUpdate~state 
+obj=IRender~render
+tick=
+combinedFragment=initialize~initialize
+cliant-&gt;&gt;&gt;render:constructor()
+tick=
+on=render
+cliant&lt;.render:render=constructor()
+tick=
+cliant-&gt;&gt;&gt;state:constructor()
+tick=
+on=state
+cliant&lt;.state:initialState=constructor()
+tick=
+cliant-&gt;&gt;&gt;tea:constructor(initialState,render)
+tick=
+tea-&gt;tea +:currentState=InitialState
+tick=
+on=tea
+cliant&lt;.tea:tea=constructor(initialState,render)
+--=initialize
+tick=
+combinedFragment=Fired render message~firedMsg tea render
+render-&gt;&gt;&gt;tea:dispacher.Dispach(msg)
+tick=
+tea-&gt;&gt;&gt;state:currentState.Update(msg)
+off=state
+tick=
+tea&lt;.state:currentState=currentState.Update(msg)
+on=state
+tick=
+tea-&gt;&gt;&gt;render:render.Render(currentState)
+tick=
+tea&lt;.render:render.Render(currentState)
+tick=
+render&lt;.tea:dispacher.Dispach(msg)
+--=firedMsg</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
