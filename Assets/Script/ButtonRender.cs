@@ -3,21 +3,21 @@ using UnityEngine.UI;
 
 [RequireComponent(typeof(Button))]
 [DisallowMultipleComponent]
-public class ButtonRender<Action> : MonoBehaviour {
+public class ButtonRender<Message> : MonoBehaviour {
 
     Button btn;
-    UnityEventRender<Action> onClick;
+    UnityEventRender<Message> onClick;
 
     void Awake() {
         btn = GetComponent<Button>();
-        onClick = new UnityEventRender<Action>(btn.onClick);
+        onClick = new UnityEventRender<Message>(btn.onClick);
     }
 
     void OnDestroy() {
         onClick.Dispose();
     }
 
-    public void OnClick<T>(IDispatcher<Action> dispatch, T msg) where T : struct, Action {
+    public void OnClick<T>(IDispatcher<Message> dispatch, T msg) where T : struct, Message {
         onClick.Render(dispatch, msg);
     }
 }

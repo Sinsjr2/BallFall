@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.UI;
 
-public class UIRender : MonoBehaviour, IRender<Unit, UIState, IUIAction> {
+public class UIRender : MonoBehaviour, IRender<Unit, UIState, IUIMessage> {
 
     /// <summary>
     ///   開始メッセージやゲームオーバー
@@ -27,7 +27,7 @@ public class UIRender : MonoBehaviour, IRender<Unit, UIState, IUIAction> {
         };
     }
 
-    public void Setup(Unit _, IDispatcher<IUIAction> dispatcher) {
+    public void Setup(Unit _, IDispatcher<IUIMessage> dispatcher) {
     }
 
     public void Render(UIState state) {
@@ -58,33 +58,33 @@ public struct UIState : IEquatable<UIState> {
     }
 }
 
-public interface IUIAction {}
+public interface IUIMessage {}
 
 /// <summary>
 ///   得点を１増加させます。
 /// </summary>
-public class IncScore : IUIAction {
+public class IncScore : IUIMessage {
 }
 
 /// <summary>
 ///   ゲームを開始するUIにします。
 ///   この時スコアを0にリセットします。
 /// </summary>
-public class ToGameReadyUI : IUIAction {}
+public class ToGameReadyUI : IUIMessage {}
 
 /// <summary>
 ///   ゲームプレイ中のUIにします。
 /// </summary>
-public class ToGamePlayUI : IUIAction {}
+public class ToGamePlayUI : IUIMessage {}
 
 /// <summary>
 ///   ゲームオーバー画面にします。
 /// </summary>
-public class ToGameOverUI : IUIAction {}
+public class ToGameOverUI : IUIMessage {}
 
-public class UIUpdate : IUpdate<UIState, IUIAction> {
+public class UIUpdate : IUpdate<UIState, IUIMessage> {
 
-    public UIState Update(UIState state, IUIAction msg) {
+    public UIState Update(UIState state, IUIMessage msg) {
         switch (msg) {
             case IncScore incScore:
                 return Update(state, incScore);

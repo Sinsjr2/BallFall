@@ -6,9 +6,9 @@ using UnityEngine.Assertions;
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 [DisallowMultipleComponent]
-public class BallRender : MonoBehaviour , IRender<Unit, BallState, IBallAction> {
+public class BallRender : MonoBehaviour , IRender<Unit, BallState, IBallMessage> {
 
-    IDispatcher<IBallAction> dispatch;
+    IDispatcher<IBallMessage> dispatch;
 
     /// <summary>
     ///   ボールを動かすためのTransform
@@ -24,7 +24,7 @@ public class BallRender : MonoBehaviour , IRender<Unit, BallState, IBallAction> 
         return new BallState { position = instancePos, speed = speed, movesBall = false };
     }
 
-    public void Setup(Unit _, IDispatcher<IBallAction> dispatcher) {
+    public void Setup(Unit _, IDispatcher<IBallMessage> dispatcher) {
         this.dispatch = dispatcher;
         ballTransform = (RectTransform)transform;
     }
@@ -49,24 +49,24 @@ public class BallRender : MonoBehaviour , IRender<Unit, BallState, IBallAction> 
     }
 }
 
-public interface IBallAction {}
+public interface IBallMessage {}
 
 /// <summary>
 ///   バーに衝突しました。
 /// </summary>
-public class OnCollisionBar : IBallAction {
+public class OnCollisionBar : IBallMessage {
 };
 
 /// <summary>
 ///   次のフレームのボールの位置を計算します。
 /// </summary>
-public class NextFrame : IBallAction {
+public class NextFrame : IBallMessage {
 }
 
 /// <summary>
 ///   ボールがエリア外に抜けた時
 /// </summary>
-public class OnOutOfArea : IBallAction {
+public class OnOutOfArea : IBallMessage {
 }
 
 /// <summary>
@@ -96,10 +96,10 @@ public struct BallState : System.IEquatable<BallState> {
     }
 }
 
-public class BallUpdate : IUpdate<BallState, IBallAction> {
+public class BallUpdate : IUpdate<BallState, IBallMessage> {
 
-    public BallState Update(BallState state, IBallAction act) {
-        switch (act) {
+    public BallState Update(BallState state, IBallMessage msg) {
+        switch (msg) {
             case NextFrame nextFrame:
                 return Update(state, nextFrame);
             case OnOutOfArea _:
@@ -107,11 +107,11 @@ public class BallUpdate : IUpdate<BallState, IBallAction> {
             case OnCollisionBar _:
                 return state;
             default:
-                throw new PatternMatchNotFoundException(act);
+                throw new PatternMatchNotFoundException(msg);
         }
     }
 
-    public BallState Update(BallState state, NextFrame act) {
+    public BallState Update(BallState state, NextFrame msg) {
         state.position += state.speed * Time.deltaTime;
         return state;
     }

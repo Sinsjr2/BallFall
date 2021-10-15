@@ -1,3 +1,3 @@
-public interface IUpdate<State, Act> {
-    State Update(State state, Act act);
+public interface IUpdate<State, Message> {
+    State Update(State state, Message message);
 }

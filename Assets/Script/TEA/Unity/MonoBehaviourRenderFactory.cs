@@ -9,15 +9,15 @@ using UnityEngine.Assertions;
 ///   Renderの前に毎回呼び出すわけではないので注意してください。
 /// </summary>
 [Serializable]
-public struct MonoBehaviourRenderFactory<T, Input, State, Act> :
-    IRender<Func<IDispatcher<Act>, T, T>, List<State>, KeyValuePair<int, Act>>
-    where T : MonoBehaviour, IRender<Input, State, Act> {
+public struct MonoBehaviourRenderFactory<T, Input, State, Message> :
+    IRender<Func<IDispatcher<Message>, T, T>, List<State>, KeyValuePair<int, Message>>
+    where T : MonoBehaviour, IRender<Input, State, Message> {
 
     struct DispatcherAndRender {
         public T render;
-        public ActionWrapper<int, KeyValuePair<int, Act>, Act> dispatcher;
+        public MessageWrapper<int, KeyValuePair<int, Message>, Message> dispatcher;
 
-        public DispatcherAndRender(T render, ActionWrapper<int, KeyValuePair<int, Act>, Act> dispatcher) {
+        public DispatcherAndRender(T render, MessageWrapper<int, KeyValuePair<int, Message>, Message> dispatcher) {
             this.render = render;
             this.dispatcher = dispatcher;
         }
@@ -35,16 +35,16 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act> :
     /// </summary>
     List<DispatcherAndRender> cachedRender;
 
-    IDispatcher<KeyValuePair<int, Act>> dispatcher;
+    IDispatcher<KeyValuePair<int, Message>> dispatcher;
 
-    Func<IDispatcher<Act>, T, T> initializer;
+    Func<IDispatcher<Message>, T, T> initializer;
 
     public T GetRender() {
         Assert.IsNotNull(render);
         return render;
     }
 
-    public void Setup(Func<IDispatcher<Act>, T, T> initializer, IDispatcher<KeyValuePair<int, Act>> dispatcher) {
+    public void Setup(Func<IDispatcher<Message>, T, T> initializer, IDispatcher<KeyValuePair<int, Message>> dispatcher) {
         Assert.IsNotNull(render);
         this.initializer = initializer;
         // 以前に初期化しているかもしれないのでリセットする
@@ -84,8 +84,8 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act> :
                 var go = GameObject.Instantiate(render);
                 var pair = new DispatcherAndRender(
                     go,
-                    dispatcher.Wrap<int, KeyValuePair<int, Act>, Act>(
-                        (d, i, act) => d.Dispatch(new KeyValuePair<int, Act>(i, act))));
+                    dispatcher.Wrap<int, KeyValuePair<int, Message>, Message>(
+                        (d, i, msg) => d.Dispatch(new KeyValuePair<int, Message>(i, msg))));
                 pair.dispatcher.value = index;
                 cachedRender.Add(pair);
                 go = initializer(pair.dispatcher, go);

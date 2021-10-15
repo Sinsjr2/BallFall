@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 
-public class TEA<Input, State, Act> : IDispatcher<Act> {
+public class TEA<Input, State, Message> : IDispatcher<Message> {
     State currentState;
 
-    readonly IRender<Input, State, Act> render;
-    readonly IUpdate<State, Act> update;
+    readonly IRender<Input, State, Message> render;
+    readonly IUpdate<State, Message> update;
     bool isCallingRender = false;
 
     /// <summary>
     ///   実行するべきアクション
     /// </summary>
-    readonly List<Act> actions = new List<Act>(16);
+    readonly List<Message> messages = new List<Message>(16);
 
     /// <summary>
     ///   レンダリングする上限回数。
@@ -21,22 +21,22 @@ public class TEA<Input, State, Act> : IDispatcher<Act> {
     int maxRendering = 10;
 
     public TEA(Input initial,
-               Act firstAct,
-               IRender<Input, State, Act> render,
+               Message firstMsg,
+               IRender<Input, State, Message> render,
                StateInitializer<Input, State> initializer,
-               IUpdate<State, Act> update) {
+               IUpdate<State, Message> update) {
 
         this.render = render;
         this.update = update;
 
         currentState = initializer.CreateState(initial);
         this.render.Setup(initial, this);
-        Dispatch(firstAct);
+        Dispatch(firstMsg);
     }
 
-    public void Dispatch(Act msg) {
+    public void Dispatch(Message msg) {
         if (isCallingRender) {
-            actions.Add(msg);
+            messages.Add(msg);
             return;
         }
         isCallingRender = true;
@@ -49,13 +49,13 @@ public class TEA<Input, State, Act> : IDispatcher<Act> {
                 if (maxRendering < renderCount) {
                     throw new InvalidOperationException($"レンダリングが指定された回数以上行われました。最大回数:{maxRendering}/n現在の状態:{currentState}");
                 }
-                foreach (var a in actions) {
+                foreach (var a in messages) {
                     newState = update.Update(newState, a);
                 }
-                actions.Clear();
+                messages.Clear();
                 render.Render(newState);
                 // レンダー呼び出し中にdispatcherが呼ばれたかが変更されたか
-                if (actions.Count <= 0) {
+                if (messages.Count <= 0) {
                     break;
                 }
             }
@@ -63,7 +63,7 @@ public class TEA<Input, State, Act> : IDispatcher<Act> {
         } finally {
             // 例外が発生したあとでもdispatchが呼び出せるようにしておく
             isCallingRender = false;
-            actions.Clear();
+            messages.Clear();
         }
     }
 }

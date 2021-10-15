@@ -1,9 +1,9 @@
-public interface IRender<Input, State, Act> {
+public interface IRender<Input, State, Message> {
 
     /// <summary>
     ///   レンダの初期化を行います。
     /// </summary>
-    void Setup(Input input, IDispatcher<Act> dispatcher);
+    void Setup(Input input, IDispatcher<Message> dispatcher);
 
     /// <summary>
     ///   stateの状態に従い描画を行います。

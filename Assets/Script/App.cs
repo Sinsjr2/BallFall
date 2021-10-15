@@ -12,15 +12,15 @@ public class App : MonoBehaviour {
     void Start() {
         Assert.IsNotNull(gameSceneRender);
         var inputSubscription = new GameObject(nameof(InputSubscription)).AddComponent<InputSubscription>();
-        var tea = new TEA<Unit, GameSceneState, IGameSceneAction>(
+        var tea = new TEA<Unit, GameSceneState, IGameSceneMessage>(
             Unit.Default,
             Singleton<InitGame>.Instance,
             gameSceneRender,
             gameSceneRender,
             new GameSceneUpdate());
 
-        inputSubscription.dispatcher = tea.Wrap<IGameSceneAction, ChangedInput>((dispatcher, act) => {
-            dispatcher.Dispatch(new OnInput{ state = act.state });
+        inputSubscription.dispatcher = tea.Wrap<IGameSceneMessage, ChangedInput>((dispatcher, msg) => {
+            dispatcher.Dispatch(new OnInput{ state = msg.state });
         });
     }
 }

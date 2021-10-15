@@ -5,7 +5,7 @@ using UnityEngine.Assertions;
 /// <summary>
 ///   バーに対応するゲームオブジェクトにアタッチして使用します。
 /// </summary>
-public class BarRender : MonoBehaviour, IRender<Unit, BarState, IBarAction> {
+public class BarRender : MonoBehaviour, IRender<Unit, BarState, IBarMessage> {
 
     /// <summary>
     ///   バーを左側に移動させたときの位置
@@ -37,7 +37,7 @@ public class BarRender : MonoBehaviour, IRender<Unit, BarState, IBarAction> {
             } };
     }
 
-    public void Setup(Unit _, IDispatcher<IBarAction> dispatcher) {
+    public void Setup(Unit _, IDispatcher<IBarMessage> dispatcher) {
         Assert.AreNotEqual(leftPos, Vector2.zero);
         Assert.AreNotEqual(rightPos, Vector2.zero);
         barTransform = (RectTransform)transform;
@@ -99,7 +99,7 @@ public struct BarState : IEquatable<BarState> {
     }
 }
 
-public interface IBarAction {}
+public interface IBarMessage {}
 
 public enum BarPosition : byte {
     Left,
@@ -107,7 +107,7 @@ public enum BarPosition : byte {
     Right,
 }
 
-public class MoveBar : IBarAction {
+public class MoveBar : IBarMessage {
     public readonly BarPosition position;
 
     public MoveBar(BarPosition pos) {
@@ -118,13 +118,13 @@ public class MoveBar : IBarAction {
 /// <summary>
 ///   バーの左右の位置を更新します。
 /// </summary>
-public struct UpdateInitialBarPos : IBarAction {
+public struct UpdateInitialBarPos : IBarMessage {
     public MovePos movePos;
 }
 
-public class BarUpdate : IUpdate<BarState, IBarAction>{
+public class BarUpdate : IUpdate<BarState, IBarMessage>{
 
-    public BarState Update(BarState state, IBarAction msg) {
+    public BarState Update(BarState state, IBarMessage msg) {
         switch (msg) {
             case MoveBar moveBar:
                 return Update(state, moveBar);

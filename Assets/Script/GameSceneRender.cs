@@ -3,16 +3,16 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGameSceneAction>, StateInitializer<Unit, GameSceneState> {
+public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGameSceneMessage>, StateInitializer<Unit, GameSceneState> {
 
     [SerializeField]
-    RenderCache<BarRender, Unit, BarState, IBarAction> barRender;
+    RenderCache<BarRender, Unit, BarState, IBarMessage> barRender;
 
     [SerializeField]
-    MonoBehaviourRenderFactory<BallRender, Unit, BallState, IBallAction> ballRender;
+    MonoBehaviourRenderFactory<BallRender, Unit, BallState, IBallMessage> ballRender;
 
     [SerializeField]
-    RenderCache<UIRender, Unit, UIState, IUIAction> uiRender;
+    RenderCache<UIRender, Unit, UIState, IUIMessage> uiRender;
 
     /// <summary>
     ///   ボールの生成するかの判定に使用します。
@@ -34,7 +34,7 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
 
     DimensionsChangedNotification notification;
 
-    IDispatcher<IGameSceneAction> dispatcher;
+    IDispatcher<IGameSceneMessage> dispatcher;
 
     public GameSceneState CreateState(Unit initial) {
         var ballInitState = ballRender.GetRender().CreateState(new Vector2(ballInstantiatePos.x, canvasRect.sizeDelta.y));
@@ -50,7 +50,7 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
         };
     }
 
-    public void Setup(Unit _, IDispatcher<IGameSceneAction> dispatcher) {
+    public void Setup(Unit _, IDispatcher<IGameSceneMessage> dispatcher) {
         Assert.IsNotNull(ballRenderParent);
         Assert.IsNotNull(canvasRect);
         this.dispatcher = dispatcher;
@@ -63,19 +63,19 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
                 ballRender.transform.SetParent(ballRenderParent, false);
                 return ballRender;
             },
-            dispatcher.Wrap<IGameSceneAction, KeyValuePair<int, IBallAction>>(
-                (d, indexAndAct) => d.Dispatch(new WrapBallAction {
-                        id = indexAndAct.Key, action = indexAndAct.Value})));
+            dispatcher.Wrap<IGameSceneMessage, KeyValuePair<int, IBallMessage>>(
+                (d, indexAndMsg) => d.Dispatch(new WrapBallMessage {
+                        id = indexAndMsg.Key, message = indexAndMsg.Value})));
 
         barRender.Setup(
             Unit.Default,
-            dispatcher.Wrap<IGameSceneAction, IBarAction>(
-                (d, act) => d.Dispatch(new WrapBarAction {action = act})));
+            dispatcher.Wrap<IGameSceneMessage, IBarMessage>(
+                (d, msg) => d.Dispatch(new WrapBarMessage {message = msg})));
 
         uiRender.Setup(
             Unit.Default,
-            dispatcher.Wrap<IGameSceneAction, IUIAction>(
-                (d, act) => d.Dispatch(new WrapUIAction {action = act})));
+            dispatcher.Wrap<IGameSceneMessage, IUIMessage>(
+                (d, msg) => d.Dispatch(new WrapUIMessage {message = msg})));
     }
 
     void OnDestroy() {
@@ -170,58 +170,58 @@ public struct BallGenerator {
     }
 }
 
-public interface IGameSceneAction {}
+public interface IGameSceneMessage {}
 
-public class InitGame : IGameSceneAction {}
+public class InitGame : IGameSceneMessage {}
 
 /// <summary>
 ///   ゲームを開始します。
 /// </summary>
-public class WrapBarAction : IGameSceneAction {
-    public IBarAction action;
+public class WrapBarMessage : IGameSceneMessage {
+    public IBarMessage message;
 }
 
-public class WrapBallAction : IGameSceneAction {
+public class WrapBallMessage : IGameSceneMessage {
     public int id;
-    public IBallAction action;
+    public IBallMessage message;
 }
 
 /// <summary>
 ///   キャンバスのサイズが変化したことを通知します。
 /// </summary>
-public class OnChangedCanvasSize : IGameSceneAction {
+public class OnChangedCanvasSize : IGameSceneMessage {
     public Vector2 canvasSize;
 }
 
 /// <summary>
 ///   キー入力があった時
 /// </summary>
-public class OnInput : IGameSceneAction {
+public class OnInput : IGameSceneMessage {
     public InputState state;
 }
 
-public class WrapUIAction : IGameSceneAction {
-    public IUIAction action;
+public class WrapUIMessage : IGameSceneMessage {
+    public IUIMessage message;
 }
 
-public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
+public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneMessage> {
 
     readonly BallUpdate ballUpdate = new BallUpdate();
     readonly BarUpdate barUpdate = new BarUpdate();
     readonly UIUpdate uiUpdate = new UIUpdate();
 
-    public GameSceneState Update(GameSceneState state, IGameSceneAction msg) {
+    public GameSceneState Update(GameSceneState state, IGameSceneMessage msg) {
         switch (msg) {
             case InitGame initGame:
                 return InitGame(state);
             case OnInput onInput:
                 return Update(state, onInput);
-            case WrapBarAction barAction:
-                return Update(state, barAction);
-            case WrapBallAction ballAction:
-                return Update(state, ballAction);
-            case WrapUIAction uiAction:
-                return Update(state, uiAction);
+            case WrapBarMessage barMessage:
+                return Update(state, barMessage);
+            case WrapBallMessage ballMessage:
+                return Update(state, ballMessage);
+            case WrapUIMessage uiMessage:
+                return Update(state, uiMessage);
             case OnChangedCanvasSize size:
                 return Update(state, size);
             default:
@@ -322,8 +322,8 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
         return state;
     }
 
-    GameSceneState Update(GameSceneState state, WrapBarAction act) {
-        state.barState = barUpdate.Update(state.barState, act.action);
+    GameSceneState Update(GameSceneState state, WrapBarMessage msg) {
+        state.barState = barUpdate.Update(state.barState, msg.message);
         return state;
     }
 
@@ -345,9 +345,9 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
         }
     }
 
-    GameSceneState Update(GameSceneState state, WrapBallAction msg) {
-        state.ballState[msg.id] = ballUpdate.Update(state.ballState[msg.id], msg.action);
-        switch (msg.action) {
+    GameSceneState Update(GameSceneState state, WrapBallMessage msg) {
+        state.ballState[msg.id] = ballUpdate.Update(state.ballState[msg.id], msg.message);
+        switch (msg.message) {
             case OnOutOfArea _:
                 // ボールが画面外に出たらゲームオーバー
                 // このとき、ボールとバーを動かないようにする
@@ -403,8 +403,8 @@ public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneAction> {
         return state;
     }
 
-    GameSceneState Update(GameSceneState state, WrapUIAction msg) {
-        state.uiState = uiUpdate.Update(state.uiState, msg.action);
+    GameSceneState Update(GameSceneState state, WrapUIMessage msg) {
+        state.uiState = uiUpdate.Update(state.uiState, msg.message);
         return state;
     }
 }
