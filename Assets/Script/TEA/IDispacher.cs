@@ -1,3 +1,3 @@
-public interface IDispacher<Act> {
-    void Dispach(Act act);
+public interface IDispatcher<Act> {
+    void Dispatch(Act act);
 }

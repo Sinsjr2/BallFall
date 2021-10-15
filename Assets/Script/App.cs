@@ -19,8 +19,8 @@ public class App : MonoBehaviour {
             gameSceneRender,
             new GameSceneUpdate());
 
-        inputSubscription.dispacher = tea.Wrap<IGameSceneAction, ChangedInput>((dispacher, act) => {
-            dispacher.Dispach(new OnInput{ state = act.state });
+        inputSubscription.dispatcher = tea.Wrap<IGameSceneAction, ChangedInput>((dispatcher, act) => {
+            dispatcher.Dispatch(new OnInput{ state = act.state });
         });
     }
 }

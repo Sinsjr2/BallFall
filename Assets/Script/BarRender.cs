@@ -37,7 +37,7 @@ public class BarRender : MonoBehaviour, IRender<Unit, BarState, IBarAction> {
             } };
     }
 
-    public void Setup(Unit _, IDispacher<IBarAction> dispacher) {
+    public void Setup(Unit _, IDispatcher<IBarAction> dispatcher) {
         Assert.AreNotEqual(leftPos, Vector2.zero);
         Assert.AreNotEqual(rightPos, Vector2.zero);
         barTransform = (RectTransform)transform;

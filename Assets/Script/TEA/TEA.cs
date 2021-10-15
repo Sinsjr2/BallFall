@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-public class TEA<Input, State, Act> : IDispacher<Act> {
+public class TEA<Input, State, Act> : IDispatcher<Act> {
     State currentState;
 
     readonly IRender<Input, State, Act> render;
@@ -31,10 +31,10 @@ public class TEA<Input, State, Act> : IDispacher<Act> {
 
         currentState = initializer.CreateState(initial);
         this.render.Setup(initial, this);
-        Dispach(firstAct);
+        Dispatch(firstAct);
     }
 
-    public void Dispach(Act msg) {
+    public void Dispatch(Act msg) {
         if (isCallingRender) {
             actions.Add(msg);
             return;
@@ -54,14 +54,14 @@ public class TEA<Input, State, Act> : IDispacher<Act> {
                 }
                 actions.Clear();
                 render.Render(newState);
-                // レンダー呼び出し中にdispacherが呼ばれたかが変更されたか
+                // レンダー呼び出し中にdispatcherが呼ばれたかが変更されたか
                 if (actions.Count <= 0) {
                     break;
                 }
             }
             currentState = newState;
         } finally {
-            // 例外が発生したあとでもdispachが呼び出せるようにしておく
+            // 例外が発生したあとでもdispatchが呼び出せるようにしておく
             isCallingRender = false;
             actions.Clear();
         }

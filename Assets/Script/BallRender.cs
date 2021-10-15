@@ -8,7 +8,7 @@ using UnityEngine.Assertions;
 [DisallowMultipleComponent]
 public class BallRender : MonoBehaviour , IRender<Unit, BallState, IBallAction> {
 
-    IDispacher<IBallAction> dispach;
+    IDispatcher<IBallAction> dispatch;
 
     /// <summary>
     ///   ボールを動かすためのTransform
@@ -24,8 +24,8 @@ public class BallRender : MonoBehaviour , IRender<Unit, BallState, IBallAction> 
         return new BallState { position = instancePos, speed = speed, movesBall = false };
     }
 
-    public void Setup(Unit _, IDispacher<IBallAction> dispacher) {
-        this.dispach = dispacher;
+    public void Setup(Unit _, IDispatcher<IBallAction> dispatcher) {
+        this.dispatch = dispatcher;
         ballTransform = (RectTransform)transform;
     }
 
@@ -37,15 +37,15 @@ public class BallRender : MonoBehaviour , IRender<Unit, BallState, IBallAction> 
 
     void OnCollisionEnter2D(Collision2D collision) {
         if (!(collision.gameObject.GetComponent<BallAreaOutCollider>() is null)) {
-            dispach.Dispach(Singleton<OnOutOfArea>.Instance);
+            dispatch.Dispatch(Singleton<OnOutOfArea>.Instance);
         }
         if (!(collision.gameObject.GetComponent<BarRender>() is null)) {
-            dispach.Dispach(Singleton<OnCollisionBar>.Instance);
+            dispatch.Dispatch(Singleton<OnCollisionBar>.Instance);
         }
     }
 
     void Update() {
-        dispach?.Dispach(Singleton<NextFrame>.Instance);
+        dispatch?.Dispatch(Singleton<NextFrame>.Instance);
     }
 }
 

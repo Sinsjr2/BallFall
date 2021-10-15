@@ -36,7 +36,7 @@ cliant&lt;.tea:tea=constructor(initialState,render)
 --=initialize
 tick=
 combinedFragment=Fired render message~firedMsg tea render
-render-&gt;&gt;&gt;tea:dispacher.Dispach(msg)
+render-&gt;&gt;&gt;tea:dispatcher.Dispatch(msg)
 tick=
 tea-&gt;&gt;&gt;state:currentState.Update(msg)
 off=state
@@ -48,7 +48,7 @@ tea-&gt;&gt;&gt;render:render.Render(currentState)
 tick=
 tea&lt;.render:render.Render(currentState)
 tick=
-render&lt;.tea:dispacher.Dispach(msg)
+render&lt;.tea:dispatcher.Dispatch(msg)
 --=firedMsg</panel_attributes>
     <additional_attributes/>
   </element>

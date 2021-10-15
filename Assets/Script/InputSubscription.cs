@@ -9,7 +9,7 @@ public class InputSubscription : MonoBehaviour {
 
     InputState prevState;
 
-    public IDispacher<ChangedInput> dispacher { set; private get; }
+    public IDispatcher<ChangedInput> dispatcher { set; private get; }
 
     void Update() {
         // 矢印キーの左右が押されていなければ、中央にする
@@ -32,7 +32,7 @@ public class InputSubscription : MonoBehaviour {
         bool isChanged = !prevState.Equals(newInput);
         prevState = newInput;
         if (isChanged) {
-            dispacher?.Dispach(new ChangedInput { state = newInput });
+            dispatcher?.Dispatch(new ChangedInput { state = newInput });
         }
     }
 }

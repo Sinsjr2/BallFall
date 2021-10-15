@@ -17,8 +17,8 @@ public class ButtonRender<Action> : MonoBehaviour {
         onClick.Dispose();
     }
 
-    public void OnClick<T>(IDispacher<Action> dispach, T msg) where T : struct, Action {
-        onClick.Render(dispach, msg);
+    public void OnClick<T>(IDispatcher<Action> dispatch, T msg) where T : struct, Action {
+        onClick.Render(dispatch, msg);
     }
 }
 

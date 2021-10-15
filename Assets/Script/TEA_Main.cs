@@ -12,7 +12,7 @@ public class Box<T> {
 public class UnityEventRender<Action> : IDisposable {
     object value = null;
     UnityAction action = null;
-    IDispacher<Action> dispach;
+    IDispatcher<Action> dispatch;
 
     readonly UnityEvent unityEvent;
 
@@ -27,12 +27,12 @@ public class UnityEventRender<Action> : IDisposable {
     }
 
     void Listner<T>() where T : struct, Action {
-        var dispach = this.dispach;
-        dispach.Dispach(((Box<T>)value).value);
+        var dispatch = this.dispatch;
+        dispatch.Dispatch(((Box<T>)value).value);
     }
 
-    public void Render<T>(IDispacher<Action> dispach, T msg) where T : struct, Action {
-        this.dispach = dispach;
+    public void Render<T>(IDispatcher<Action> dispatch, T msg) where T : struct, Action {
+        this.dispatch = dispatch;
         var v = value as Box<T>;
         // アロケーションを避けるために同じオブジェクトを使いまわす
         if (v is null) {

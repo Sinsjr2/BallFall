@@ -23,9 +23,9 @@ public struct RenderCache<T, Input, State, Act> : IRender<Input, State, Act>
         return render;
     }
 
-    public void Setup(Input input, IDispacher<Act> dispacher) {
+    public void Setup(Input input, IDispatcher<Act> dispatcher) {
         Assert.IsNotNull(render);
-        render.Setup(input, dispacher);
+        render.Setup(input, dispatcher);
     }
 
     public void Render(State state) {

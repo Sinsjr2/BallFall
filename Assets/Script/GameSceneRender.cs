@@ -34,7 +34,7 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
 
     DimensionsChangedNotification notification;
 
-    IDispacher<IGameSceneAction> dispacher;
+    IDispatcher<IGameSceneAction> dispatcher;
 
     public GameSceneState CreateState(Unit initial) {
         var ballInitState = ballRender.GetRender().CreateState(new Vector2(ballInstantiatePos.x, canvasRect.sizeDelta.y));
@@ -50,32 +50,32 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
         };
     }
 
-    public void Setup(Unit _, IDispacher<IGameSceneAction> dispacher) {
+    public void Setup(Unit _, IDispatcher<IGameSceneAction> dispatcher) {
         Assert.IsNotNull(ballRenderParent);
         Assert.IsNotNull(canvasRect);
-        this.dispacher = dispacher;
+        this.dispatcher = dispatcher;
         notification = canvasRect.gameObject.AddComponent<DimensionsChangedNotification>();
         notification.AddHandler(
-            () => dispacher.Dispach(new OnChangedCanvasSize {canvasSize = canvasRect.sizeDelta}));
+            () => dispatcher.Dispatch(new OnChangedCanvasSize {canvasSize = canvasRect.sizeDelta}));
         ballRender.Setup(
             (d, ballRender) => {
                 ballRender.Setup(Unit.Default, d);
                 ballRender.transform.SetParent(ballRenderParent, false);
                 return ballRender;
             },
-            dispacher.Wrap<IGameSceneAction, KeyValuePair<int, IBallAction>>(
-                (d, indexAndAct) => d.Dispach(new WrapBallAction {
+            dispatcher.Wrap<IGameSceneAction, KeyValuePair<int, IBallAction>>(
+                (d, indexAndAct) => d.Dispatch(new WrapBallAction {
                         id = indexAndAct.Key, action = indexAndAct.Value})));
 
         barRender.Setup(
             Unit.Default,
-            dispacher.Wrap<IGameSceneAction, IBarAction>(
-                (d, act) => d.Dispach(new WrapBarAction {action = act})));
+            dispatcher.Wrap<IGameSceneAction, IBarAction>(
+                (d, act) => d.Dispatch(new WrapBarAction {action = act})));
 
         uiRender.Setup(
             Unit.Default,
-            dispacher.Wrap<IGameSceneAction, IUIAction>(
-                (d, act) => d.Dispach(new WrapUIAction {action = act})));
+            dispatcher.Wrap<IGameSceneAction, IUIAction>(
+                (d, act) => d.Dispatch(new WrapUIAction {action = act})));
     }
 
     void OnDestroy() {

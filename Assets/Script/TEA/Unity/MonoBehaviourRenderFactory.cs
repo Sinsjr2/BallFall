@@ -10,16 +10,16 @@ using UnityEngine.Assertions;
 /// </summary>
 [Serializable]
 public struct MonoBehaviourRenderFactory<T, Input, State, Act> :
-    IRender<Func<IDispacher<Act>, T, T>, List<State>, KeyValuePair<int, Act>>
+    IRender<Func<IDispatcher<Act>, T, T>, List<State>, KeyValuePair<int, Act>>
     where T : MonoBehaviour, IRender<Input, State, Act> {
 
-    struct DispacherAndRender {
+    struct DispatcherAndRender {
         public T render;
-        public ActionWrapper<int, KeyValuePair<int, Act>, Act> dispacher;
+        public ActionWrapper<int, KeyValuePair<int, Act>, Act> dispatcher;
 
-        public DispacherAndRender(T render, ActionWrapper<int, KeyValuePair<int, Act>, Act> dispacher) {
+        public DispatcherAndRender(T render, ActionWrapper<int, KeyValuePair<int, Act>, Act> dispatcher) {
             this.render = render;
-            this.dispacher = dispacher;
+            this.dispatcher = dispatcher;
         }
     }
 
@@ -33,24 +33,24 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act> :
     /// <summary>
     ///   今までに作成されたrenderのキャッシュ
     /// </summary>
-    List<DispacherAndRender> cachedRender;
+    List<DispatcherAndRender> cachedRender;
 
-    IDispacher<KeyValuePair<int, Act>> dispacher;
+    IDispatcher<KeyValuePair<int, Act>> dispatcher;
 
-    Func<IDispacher<Act>, T, T> initializer;
+    Func<IDispatcher<Act>, T, T> initializer;
 
     public T GetRender() {
         Assert.IsNotNull(render);
         return render;
     }
 
-    public void Setup(Func<IDispacher<Act>, T, T> initializer, IDispacher<KeyValuePair<int, Act>> dispacher) {
+    public void Setup(Func<IDispatcher<Act>, T, T> initializer, IDispatcher<KeyValuePair<int, Act>> dispatcher) {
         Assert.IsNotNull(render);
         this.initializer = initializer;
         // 以前に初期化しているかもしれないのでリセットする
         Clear();
-        cachedRender = new List<DispacherAndRender>();
-        this.dispacher = dispacher;
+        cachedRender = new List<DispatcherAndRender>();
+        this.dispatcher = dispatcher;
     }
 
     /// <summary>
@@ -66,7 +66,7 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act> :
                 // ステートがあるうちはrenderに渡す
                 if (e.MoveNext()) {
                     r.render.gameObject.SetActive(true);
-                    r.dispacher.value = index;
+                    r.dispatcher.value = index;
                     r.render.Render(e.Current);
                 } else {
                     // 不要な分はgameobjectをNonActiveにすることで持っておく
@@ -82,13 +82,13 @@ public struct MonoBehaviourRenderFactory<T, Input, State, Act> :
             // 足りない分をインスタンス化する
             for (;e.MoveNext(); index++) {
                 var go = GameObject.Instantiate(render);
-                var pair = new DispacherAndRender(
+                var pair = new DispatcherAndRender(
                     go,
-                    dispacher.Wrap<int, KeyValuePair<int, Act>, Act>(
-                        (d, i, act) => d.Dispach(new KeyValuePair<int, Act>(i, act))));
-                pair.dispacher.value = index;
+                    dispatcher.Wrap<int, KeyValuePair<int, Act>, Act>(
+                        (d, i, act) => d.Dispatch(new KeyValuePair<int, Act>(i, act))));
+                pair.dispatcher.value = index;
                 cachedRender.Add(pair);
-                go = initializer(pair.dispacher, go);
+                go = initializer(pair.dispatcher, go);
                 go.Render(e.Current);
             }
         }

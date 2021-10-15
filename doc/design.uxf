@@ -30,7 +30,7 @@ TEA&lt;Input, State, Message&gt;
 IRender&lt;Input, State, Message&gt;
 --
 --
-+ Setup(input:Input, dispacher:IDspacher&lt;Message&gt;):void
++ Setup(input:Input, dispatcher:IDspatcher&lt;Message&gt;):void
 + Render(message:State): void</panel_attributes>
     <additional_attributes/>
   </element>
@@ -60,10 +60,10 @@ IUpdater&lt;State, Message&gt;
     </coordinates>
     <panel_attributes>style=autoresize
 &lt;&lt;interface&gt;&gt;
-IDispacher&lt;Message&gt;
+IDispatcher&lt;Message&gt;
 --
 --
-+ Dispach(message:Message):void</panel_attributes>
++ Dispatch(message:Message):void</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
@@ -173,7 +173,7 @@ Updateを呼び出します。</panel_attributes>
 MessageWrapper&lt;Before, After&gt;
 --
 --
-+ MessageWrapper(dispacher:IDispacher&lt;Before&gt;, Func&lt;Before, After&gt; createMsg)</panel_attributes>
++ MessageWrapper(dispatcher:IDispatcher&lt;Before&gt;, Func&lt;Before, After&gt; createMsg)</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
