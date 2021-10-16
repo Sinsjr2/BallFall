@@ -1,3 +1,5 @@
-public interface IDispatcher<Message> {
-    void Dispatch(Message msg);
+namespace TEA {
+    public interface IDispatcher<Message> {
+        void Dispatch(Message msg);
+    }
 }

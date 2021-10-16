@@ -2,37 +2,40 @@ using System;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-/// <summary>
-///   前回書き込んだ状態と比較して、異なっていればRenderを呼び出すようにします。
-/// </summary>
-[Serializable]
-public struct RenderCache<T, Input, State, Message> : IRender<Input, State, Message>
-    where T : class, IRender<Input, State, Message>
-    where State : IEquatable<State> {
-
-    [SerializeField]
-    T render;
+namespace TEA.Unity {
 
     /// <summary>
-    ///   前回Renderに渡した値
+    ///   前回書き込んだ状態と比較して、異なっていればRenderを呼び出すようにします。
     /// </summary>
-    State prevState;
+    [Serializable]
+    public struct RenderCache<T, Input, State, Message> : IRender<Input, State, Message>
+        where T : class, IRender<Input, State, Message>
+        where State : IEquatable<State> {
 
-    public T GetRender() {
-        Assert.IsNotNull(render);
-        return render;
-    }
+        [SerializeField]
+        T render;
 
-    public void Setup(Input input, IDispatcher<Message> dispatcher) {
-        Assert.IsNotNull(render);
-        render.Setup(input, dispatcher);
-    }
+        /// <summary>
+        ///   前回Renderに渡した値
+        /// </summary>
+        State prevState;
 
-    public void Render(State state) {
-        if (prevState.Equals(state)) {
-            return;
+        public T GetRender() {
+            Assert.IsNotNull(render);
+            return render;
         }
-        prevState = state;
-        render.Render(state);
+
+        public void Setup(Input input, IDispatcher<Message> dispatcher) {
+            Assert.IsNotNull(render);
+            render.Setup(input, dispatcher);
+        }
+
+        public void Render(State state) {
+            if (prevState.Equals(state)) {
+                return;
+            }
+            prevState = state;
+            render.Render(state);
+        }
     }
 }
