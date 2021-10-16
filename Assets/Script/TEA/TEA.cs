@@ -9,7 +9,7 @@ public class TEA<Input, State, Message> : IDispatcher<Message> {
     bool isCallingRender = false;
 
     /// <summary>
-    ///   実行するべきアクション
+    ///   実行するべきメッセージ
     /// </summary>
     readonly List<Message> messages = new List<Message>(16);
 
