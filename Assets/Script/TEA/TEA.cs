@@ -7,7 +7,6 @@ namespace TEA {
         State currentState;
 
         readonly IRender<Input, State, Message> render;
-        // readonly IUpdate<State, Message> update;
         bool isCallingRender = false;
 
         /// <summary>
