@@ -62,19 +62,16 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
                 ballRender.transform.SetParent(ballRenderParent, false);
                 return ballRender;
             },
-            dispatcher.Wrap<IGameSceneMessage, KeyValuePair<int, IBallMessage>>(
-                (d, indexAndMsg) => d.Dispatch(new WrapBallMessage {
-                        id = indexAndMsg.Key, message = indexAndMsg.Value})));
+            dispatcher.Wrap((KeyValuePair<int, IBallMessage> indexAndMsg) =>
+                              new WrapBallMessage { id = indexAndMsg.Key, message = indexAndMsg.Value}));
 
         barRender.Setup(
             Unit.Default,
-            dispatcher.Wrap<IGameSceneMessage, IBarMessage>(
-                (d, msg) => d.Dispatch(new WrapBarMessage {message = msg})));
+            dispatcher.Wrap((IBarMessage msg) => new WrapBarMessage {message = msg}));
 
         uiRender.Setup(
             Unit.Default,
-            dispatcher.Wrap<IGameSceneMessage, IUIMessage>(
-                (d, msg) => d.Dispatch(new WrapUIMessage {message = msg})));
+            dispatcher.Wrap((IUIMessage msg) => new WrapUIMessage {message = msg}));
     }
 
     void OnDestroy() {
