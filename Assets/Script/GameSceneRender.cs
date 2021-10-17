@@ -36,8 +36,6 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
 
     DimensionsChangedNotification notification;
 
-    IDispatcher<IGameSceneMessage> dispatcher;
-
     public GameSceneState CreateState() {
         var ballInitState = ballRender.GetRender().CreateState(new Vector2(ballInstantiatePos.x, canvasRect.sizeDelta.y));
         var barInitState = barRender.GetRender().CreateState();
@@ -55,7 +53,6 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
     public void Setup(Unit _, IDispatcher<IGameSceneMessage> dispatcher) {
         Assert.IsNotNull(ballRenderParent);
         Assert.IsNotNull(canvasRect);
-        this.dispatcher = dispatcher;
         notification = canvasRect.gameObject.AddComponent<DimensionsChangedNotification>();
         notification.AddHandler(
             () => dispatcher.Dispatch(new OnChangedCanvasSize {canvasSize = canvasRect.sizeDelta}));
