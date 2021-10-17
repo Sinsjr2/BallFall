@@ -77,7 +77,7 @@ public struct MovePos : IEquatable<MovePos> {
     }
 }
 
-public struct BarState : IEquatable<BarState> {
+public struct BarState : IEquatable<BarState>, IUpdate<BarState, IBarMessage> {
     public MovePos movePos;
     public BarPosition barPosition;
 
@@ -91,6 +91,21 @@ public struct BarState : IEquatable<BarState> {
     /// </summary>
     public Vector2 GetPosition() {
         return movePos.GetPos(barPosition);
+    }
+
+    public BarState Update(IBarMessage msg) {
+        switch (msg) {
+            case MoveBar moveBar: return Update(this, moveBar);
+            default: throw new PatternMatchNotFoundException(msg);
+        }
+    }
+
+    BarState Update(BarState state, MoveBar msg) {
+        if (!state.canMove) {
+            return state;
+        }
+        state.barPosition = msg.position;
+        return state;
     }
 
     public bool Equals(BarState other) {
@@ -121,24 +136,4 @@ public class MoveBar : IBarMessage {
 /// </summary>
 public struct UpdateInitialBarPos : IBarMessage {
     public MovePos movePos;
-}
-
-public class BarUpdate : IUpdate<BarState, IBarMessage>{
-
-    public BarState Update(BarState state, IBarMessage msg) {
-        switch (msg) {
-            case MoveBar moveBar:
-                return Update(state, moveBar);
-            default:
-                throw new PatternMatchNotFoundException(msg);
-        }
-    }
-
-    public BarState Update(BarState state, MoveBar msg) {
-        if (!state.canMove) {
-            return state;
-        }
-        state.barPosition = msg.position;
-        return state;
-    }
 }

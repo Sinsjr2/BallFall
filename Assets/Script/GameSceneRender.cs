@@ -102,9 +102,9 @@ public enum GameState : byte {
     GameOver,
 }
 
-public struct GameSceneState {
+public struct GameSceneState : IUpdate<GameSceneState, IGameSceneMessage> {
 
-    /// <summary>
+    /// <summary>x
     ///   ボールをインスタンス化するのに必要な初期状態
     /// </summary>
     public BallState ballInitState;
@@ -133,6 +133,198 @@ public struct GameSceneState {
     ///   ボールの生成をするかどうかを判定するために使用するキャンバスの現在の大きさ
     /// </summary>
     public Vector2 canvasSize;
+
+    public GameSceneState Update(IGameSceneMessage msg) {
+        switch (msg) {
+            case InitGame: return InitialGame(this);
+            case OnInput onInput: return Update(this, onInput);
+            case WrapBarMessage barMessage: return Update(this, barMessage);
+            case WrapBallMessage ballMessage: return Update(this, ballMessage);
+            case WrapUIMessage uiMessage: return Update(this, uiMessage);
+            case OnChangedCanvasSize size: return Update(this, size);
+            default: throw new PatternMatchNotFoundException(msg);
+        }
+    }
+
+    GameSceneState InitialGame(GameSceneState state) {
+        // 待機画面にする
+        // バーとボールを初期状態にする
+        state.uiState = state.uiState.Update(Singleton<ToGameReadyUI>.Instance);
+        state.barState = state.barInitState;
+        state.ballState = new [] {state.ballInitState}.ToList();
+        state.gameState = GameState.Ready;
+        return state;
+    }
+
+    /// <summary>
+    ///   ゲームを実行状態にします。
+    /// </summary>
+    GameSceneState PlayGameUpdate(GameSceneState state) {
+        state.uiState = state.uiState.Update(Singleton<ToGamePlayUI>.Instance);
+        state.barState.canMove = true;
+        SetMovableToAllBall(state.ballState, true);
+
+        state.gameState = GameState.Playing;
+        return state;
+    }
+
+    GameSceneState Update(GameSceneState state, OnChangedCanvasSize size) {
+        Debug.Log(state.canvasSize);
+        state.canvasSize = size.canvasSize;
+        Debug.Log(size.canvasSize);
+        return state;
+    }
+
+    public GameSceneState Update(GameSceneState state, OnInput input) {
+        switch (state.gameState) {
+            case GameState.Ready:
+                return input.state.pushedEnterButton
+                    ? PlayGameUpdate(state)
+                    : state;
+            case GameState.Playing:
+                // 中断ボタンの方を優先する
+                if (input.state.pushedEscapeButton) {
+                    return PauseGame(state);
+                }
+                state.barState = state.barState.Update(new MoveBar (pos : input.state.barPosition));
+                return state;
+            case GameState.Pausing:
+                // エンターで再開する
+                // エスケープで終了する。
+                // 終了を優先する
+                if (input.state.pushedEscapeButton) {
+                    StopGame();
+                    // エディタモードであると１フレーム後に終了する
+                    return state;
+                } else if (input.state.pushedEnterButton) {
+                    return PlayGameUpdate(state);
+                }
+                return state;
+            case GameState.GameOver:
+                // ゲームを終了する場合はEscキー
+                // 再開する場合はEnterキー
+                // 同時押しされた場合は、終了を優先する
+                if (input.state.pushedEscapeButton) {
+                    StopGame();
+                    // エディタモードであると１フレーム後に終了する
+                    return state;
+                } else if (input.state.pushedEnterButton) {
+                    return InitialGame(state);
+                }
+                return state;
+            default:
+                throw new PatternMatchNotFoundException(state.gameState);
+        }
+    }
+
+    /// <summary>
+    ///   ゲームを終了させ、アプリを停止させます。
+    /// </summary>
+    static void StopGame() {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
+    /// <summary>
+    ///   ゲームを一時停止します。
+    /// </summary>
+    GameSceneState PauseGame(GameSceneState state) {
+        SetMovableToAllBall(state.ballState, false);
+        state.barState.canMove = false;
+        state.uiState = state.uiState.ToPauseUI();
+        state.gameState = GameState.Pausing;
+        return state;
+    }
+
+    GameSceneState Update(GameSceneState state, WrapBarMessage msg) {
+        state.barState = state.barState.Update(msg.message);
+        return state;
+    }
+
+    /// <summary>
+    ///   最後の要素を取得します。要素がなければ例外が発生します。
+    /// </summary>
+    static T GetLast<T>(List<T> xs) {
+        return xs[xs.Count - 1];
+    }
+
+    /// <summary>
+    ///   すべてのボールに対してボールが動くことができるかどうかを設定します。
+    /// </summary>
+    static void SetMovableToAllBall(List<BallState> balls, bool canMove) {
+        for (int i = 0; i < balls.Count; i++) {
+            var ballST = balls[i];
+            ballST.movesBall = canMove;
+            balls[i] = ballST;
+        }
+    }
+
+    GameSceneState Update(GameSceneState state, WrapBallMessage msg) {
+        state.ballState[msg.id] = state.ballState[msg.id].Update(msg.message);
+        switch (msg.message) {
+            case OnOutOfArea:
+                // ボールが画面外に出たらゲームオーバー
+                // このとき、ボールとバーを動かないようにする
+                state.uiState = state.uiState.Update(Singleton<ToGameOverUI>.Instance);
+                SetMovableToAllBall(state.ballState, false);
+                state.barState.canMove = false;
+                state.gameState = GameState.GameOver;
+                break;
+            case OnCollisionBar:
+                // ボールを削除する
+                state.ballState.RemoveAt(msg.id);
+                // スコアをアップさせる
+                state.uiState = state.uiState.Update(Singleton<IncScore>.Instance);
+                // もしこれが最後のボールであれば、表示できなくてもボールを生成する。
+                if (state.ballState.Count <= 0) {
+                    state = MaybeRandomGenerateBall(state);
+                }
+                break;
+            case NextFrame:
+                if (state.ballState.Count <= 0) {
+                    break;
+                }
+                state = MaybeRandomGenerateBall(state);
+                break;
+            default:
+                // do nothing
+                break;
+        }
+        return state;
+    }
+
+    /// <summary>
+    ///   ボールの間隔、x座標に関してランダムにボールを生成します。これは、ゲームが実行中のみ機能します。
+    /// </summary>
+    static GameSceneState MaybeRandomGenerateBall(GameSceneState state) {
+        if (state.gameState != GameState.Playing) {
+            return state;
+        }
+
+        var latestBall = GetLast(state.ballState);
+        var nextPos = state.ballGenerator?.MaybeGenerate(state.canvasSize, latestBall);
+        if (nextPos.HasValue) {
+            state.ballGenerator = BallGenerator.RandomPos(50, 300);
+            var ballXPos = state.barState.movePos.GetPos(RandomEnum<BarPosition>.GetRandom()).x;
+            // ボールを生成する(yの相対位置、x方向はランダム)
+            var ballPos = new Vector2(ballXPos, latestBall.position.y + nextPos.Value);
+            var newBall = state.ballInitState;
+            newBall.movesBall = true;
+            newBall.position = ballPos;
+
+            state.ballState.Add(newBall);
+        }
+        return state;
+    }
+
+    GameSceneState Update(GameSceneState state, WrapUIMessage msg) {
+        state.uiState = state.uiState.Update(msg.message);
+        return state;
+    }
+
 }
 
 /// <summary>
@@ -204,209 +396,4 @@ public class OnInput : IGameSceneMessage {
 
 public class WrapUIMessage : IGameSceneMessage {
     public IUIMessage message;
-}
-
-public class GameSceneUpdate : IUpdate<GameSceneState, IGameSceneMessage> {
-
-    readonly BallUpdate ballUpdate = new BallUpdate();
-    readonly BarUpdate barUpdate = new BarUpdate();
-    readonly UIUpdate uiUpdate = new UIUpdate();
-
-    public GameSceneState Update(GameSceneState state, IGameSceneMessage msg) {
-        switch (msg) {
-            case InitGame initGame:
-                return InitGame(state);
-            case OnInput onInput:
-                return Update(state, onInput);
-            case WrapBarMessage barMessage:
-                return Update(state, barMessage);
-            case WrapBallMessage ballMessage:
-                return Update(state, ballMessage);
-            case WrapUIMessage uiMessage:
-                return Update(state, uiMessage);
-            case OnChangedCanvasSize size:
-                return Update(state, size);
-            default:
-                throw new PatternMatchNotFoundException(msg);
-        }
-    }
-
-    GameSceneState InitGame(GameSceneState state) {
-        // 待機画面にする
-        // バーとボールを初期状態にする
-        state.uiState = uiUpdate.Update(state.uiState, Singleton<ToGameReadyUI>.Instance);
-        state.barState = state.barInitState;
-        state.ballState = new [] {state.ballInitState}.ToList();
-        state.gameState = GameState.Ready;
-        return state;
-    }
-
-    /// <summary>
-    ///   ゲームを実行状態にします。
-    /// </summary>
-    GameSceneState PlayGameUpdate(GameSceneState state) {
-        state.uiState = uiUpdate.Update(state.uiState, Singleton<ToGamePlayUI>.Instance);
-        state.barState.canMove = true;
-        SetMovableToAllBall(state.ballState, true);
-
-        state.gameState = GameState.Playing;
-        return state;
-    }
-
-    GameSceneState Update(GameSceneState state, OnChangedCanvasSize size) {
-        Debug.Log(state.canvasSize);
-        state.canvasSize = size.canvasSize;
-        Debug.Log(size.canvasSize);
-        return state;
-    }
-
-    public GameSceneState Update(GameSceneState state, OnInput input) {
-        switch (state.gameState) {
-            case GameState.Ready:
-                return input.state.pushedEnterButton
-                    ? PlayGameUpdate(state)
-                    : state;
-            case GameState.Playing:
-                // 中断ボタンの方を優先する
-                if (input.state.pushedEscapeButton) {
-                    return PauseGame(state);
-                }
-                state.barState = barUpdate.Update(state.barState, new MoveBar (pos : input.state.barPosition));
-                return state;
-            case GameState.Pausing:
-                // エンターで再開する
-                // エスケープで終了する。
-                // 終了を優先する
-                if (input.state.pushedEscapeButton) {
-                    StopGame();
-                    // エディタモードであると１フレーム後に終了する
-                    return state;
-                } else if (input.state.pushedEnterButton) {
-                    return PlayGameUpdate(state);
-                }
-                return state;
-            case GameState.GameOver:
-                // ゲームを終了する場合はEscキー
-                // 再開する場合はEnterキー
-                // 同時押しされた場合は、終了を優先する
-                if (input.state.pushedEscapeButton) {
-                    StopGame();
-                    // エディタモードであると１フレーム後に終了する
-                    return state;
-                } else if (input.state.pushedEnterButton) {
-                    return InitGame(state);
-                }
-                return state;
-            default:
-                throw new PatternMatchNotFoundException(state.gameState);
-        }
-    }
-
-    /// <summary>
-    ///   ゲームを終了させ、アプリを停止させます。
-    /// </summary>
-    static void StopGame() {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
-    }
-
-    /// <summary>
-    ///   ゲームを一時停止します。
-    /// </summary>
-    GameSceneState PauseGame(GameSceneState state) {
-        SetMovableToAllBall(state.ballState, false);
-        state.barState.canMove = false;
-        state.uiState = uiUpdate.ToPauseUI(state.uiState);
-        state.gameState = GameState.Pausing;
-        return state;
-    }
-
-    GameSceneState Update(GameSceneState state, WrapBarMessage msg) {
-        state.barState = barUpdate.Update(state.barState, msg.message);
-        return state;
-    }
-
-    /// <summary>
-    ///   最後の要素を取得します。要素がなければ例外が発生します。
-    /// </summary>
-    static T GetLast<T>(List<T> xs) {
-        return xs[xs.Count - 1];
-    }
-
-    /// <summary>
-    ///   すべてのボールに対してボールが動くことができるかどうかを設定します。
-    /// </summary>
-    static void SetMovableToAllBall(List<BallState> balls, bool canMove) {
-        for (int i = 0; i < balls.Count; i++) {
-            var ballST = balls[i];
-            ballST.movesBall = canMove;
-            balls[i] = ballST;
-        }
-    }
-
-    GameSceneState Update(GameSceneState state, WrapBallMessage msg) {
-        state.ballState[msg.id] = ballUpdate.Update(state.ballState[msg.id], msg.message);
-        switch (msg.message) {
-            case OnOutOfArea _:
-                // ボールが画面外に出たらゲームオーバー
-                // このとき、ボールとバーを動かないようにする
-                state.uiState = uiUpdate.Update(state.uiState, Singleton<ToGameOverUI>.Instance);
-                SetMovableToAllBall(state.ballState, false);
-                state.barState.canMove = false;
-                state.gameState = GameState.GameOver;
-                break;
-            case OnCollisionBar colBar:
-                // ボールを削除する
-                state.ballState.RemoveAt(msg.id);
-                // スコアをアップさせる
-                state.uiState = uiUpdate.Update(state.uiState, Singleton<IncScore>.Instance);
-                // もしこれが最後のボールであれば、表示できなくてもボールを生成する。
-                if (state.ballState.Count <= 0) {
-                    state = MaybeRandomGenerateBall(state);
-                }
-                break;
-            case NextFrame _:
-                if (state.ballState.Count <= 0) {
-                    break;
-                }
-                state = MaybeRandomGenerateBall(state);
-                break;
-            default:
-                // do nothing
-                break;
-        }
-        return state;
-    }
-
-    /// <summary>
-    ///   ボールの間隔、x座標に関してランダムにボールを生成します。これは、ゲームが実行中のみ機能します。
-    /// </summary>
-    static GameSceneState MaybeRandomGenerateBall(GameSceneState state) {
-        if (state.gameState != GameState.Playing) {
-            return state;
-        }
-
-        var latestBall = GetLast(state.ballState);
-        var nextPos = state.ballGenerator?.MaybeGenerate(state.canvasSize, latestBall);
-        if (nextPos.HasValue) {
-            state.ballGenerator = BallGenerator.RandomPos(50, 300);
-            var ballXPos = state.barState.movePos.GetPos(RandomEnum<BarPosition>.GetRandom()).x;
-            // ボールを生成する(yの相対位置、x方向はランダム)
-            var ballPos = new Vector2(ballXPos, latestBall.position.y + nextPos.Value);
-            var newBall = state.ballInitState;
-            newBall.movesBall = true;
-            newBall.position = ballPos;
-
-            state.ballState.Add(newBall);
-        }
-        return state;
-    }
-
-    GameSceneState Update(GameSceneState state, WrapUIMessage msg) {
-        state.uiState = uiUpdate.Update(state.uiState, msg.message);
-        return state;
-    }
 }

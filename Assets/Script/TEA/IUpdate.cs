@@ -1,5 +1,8 @@
 namespace TEA {
     public interface IUpdate<State, Message> {
-        State Update(State state, Message message);
+        /// <summary>
+        ///  メッセージにより新しい状態に更新し返します。
+        /// </summary>
+        State Update(Message msg);
     }
 }

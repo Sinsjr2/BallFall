@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 
 namespace TEA {
-    public class TEA<Input, State, Message> : IDispatcher<Message> {
+    public class TEA<Input, State, Message> : IDispatcher<Message>
+        where State : IUpdate<State, Message> {
         State currentState;
 
         readonly IRender<Input, State, Message> render;
-        readonly IUpdate<State, Message> update;
+        // readonly IUpdate<State, Message> update;
         bool isCallingRender = false;
 
         /// <summary>
@@ -24,11 +25,9 @@ namespace TEA {
         public TEA(Input initial,
                    Message firstMsg,
                    IRender<Input, State, Message> render,
-                   StateInitializer<Input, State> initializer,
-                   IUpdate<State, Message> update) {
+                   StateInitializer<Input, State> initializer) {
 
             this.render = render;
-            this.update = update;
 
             currentState = initializer.CreateState(initial);
             this.render.Setup(initial, this);
@@ -42,7 +41,7 @@ namespace TEA {
             }
             isCallingRender = true;
             try {
-                var newState = update.Update(currentState, msg);
+                var newState = currentState.Update(msg);
                 render.Render(newState);
                 // 無限ループを回避するため
                 // レンダリングした回数
@@ -51,7 +50,7 @@ namespace TEA {
                         throw new InvalidOperationException($"レンダリングが指定された回数以上行われました。最大回数:{maxRendering}/n現在の状態:{currentState}");
                     }
                     foreach (var a in messages) {
-                        newState = update.Update(newState, a);
+                        newState = newState.Update(a);
                     }
                     messages.Clear();
                     render.Render(newState);

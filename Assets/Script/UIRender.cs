@@ -39,7 +39,7 @@ public class UIRender : MonoBehaviour, IRender<Unit, UIState, IUIMessage> {
 
 }
 
-public struct UIState : IEquatable<UIState> {
+public struct UIState : IEquatable<UIState>, IUpdate<UIState, IUIMessage> {
     public int score;
 
     /// <summary>
@@ -51,6 +51,50 @@ public struct UIState : IEquatable<UIState> {
     ///   メッセージを表示するか
     /// </summary>
     public bool showMessage;
+
+    public UIState Update(IUIMessage msg) {
+        switch (msg) {
+            case IncScore incScore: return Update(this, incScore);
+            case ToGameReadyUI toGameReadyUI: return Update(this, toGameReadyUI);
+            case ToGamePlayUI toGamePlayUI: return Update(this, toGamePlayUI);
+            case ToGameOverUI toGameOverUI: return Update(this, toGameOverUI);
+            default: throw new PatternMatchNotFoundException(msg);
+        }
+    }
+
+    UIState Update(UIState state, IncScore msg) {
+        state.score++;
+        return state;
+    }
+
+    /// <summary>
+    ///   一時中断中のUIに変更します。
+    /// </summary>
+    public UIState ToPauseUI() {
+        var state = this;
+        state.statusMessage = "Pausing";
+        state.showMessage = true;
+        return state;
+    }
+
+    UIState Update(UIState state, ToGameReadyUI msg) {
+        state.score = 0;
+        state.statusMessage = "Readly?";
+        state.showMessage = true;
+        return state;
+    }
+
+    UIState Update(UIState state, ToGamePlayUI msg) {
+        state.statusMessage = "";
+        state.showMessage = false;
+        return state;
+    }
+
+    UIState Update(UIState state, ToGameOverUI msg) {
+        state.statusMessage = "Game Over";
+        state.showMessage = true;
+        return state;
+    }
 
     public bool Equals(UIState other) {
         return statusMessage == other.statusMessage &&
@@ -82,54 +126,3 @@ public class ToGamePlayUI : IUIMessage {}
 ///   ゲームオーバー画面にします。
 /// </summary>
 public class ToGameOverUI : IUIMessage {}
-
-public class UIUpdate : IUpdate<UIState, IUIMessage> {
-
-    public UIState Update(UIState state, IUIMessage msg) {
-        switch (msg) {
-            case IncScore incScore:
-                return Update(state, incScore);
-            case ToGameReadyUI toGameReadyUI:
-                return Update(state, toGameReadyUI);
-            case ToGamePlayUI toGamePlayUI:
-                return Update(state, toGamePlayUI);
-            case ToGameOverUI toGameOverUI:
-                return Update(state, toGameOverUI);
-            default:
-                throw new PatternMatchNotFoundException(msg);
-        }
-    }
-
-    public UIState Update(UIState state, IncScore msg) {
-        state.score++;
-        return state;
-    }
-
-    /// <summary>
-    ///   一時中断中のUIに変更します。
-    /// </summary>
-    public UIState ToPauseUI(UIState state) {
-        state.statusMessage = "Pausing";
-        state.showMessage = true;
-        return state;
-    }
-
-    public UIState Update(UIState state, ToGameReadyUI msg) {
-        state.score = 0;
-        state.statusMessage = "Readly?";
-        state.showMessage = true;
-        return state;
-    }
-
-    public UIState Update(UIState state, ToGamePlayUI msg) {
-        state.statusMessage = "";
-        state.showMessage = false;
-        return state;
-    }
-
-    public UIState Update(UIState state, ToGameOverUI msg) {
-        state.statusMessage = "Game Over";
-        state.showMessage = true;
-        return state;
-    }
-}

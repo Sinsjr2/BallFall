@@ -73,7 +73,7 @@ public class OnOutOfArea : IBallMessage {
 /// <summary>
 ///   ボール１つの状態
 /// </summary>
-public struct BallState : System.IEquatable<BallState> {
+public struct BallState : System.IEquatable<BallState>, IUpdate<BallState, IBallMessage> {
 
     /// <summary>
     ///   ボールの位置
@@ -95,25 +95,18 @@ public struct BallState : System.IEquatable<BallState> {
             speed == other.speed &&
             movesBall == other.movesBall;
     }
-}
 
-public class BallUpdate : IUpdate<BallState, IBallMessage> {
-
-    public BallState Update(BallState state, IBallMessage msg) {
+    public BallState Update(IBallMessage msg) {
         switch (msg) {
-            case NextFrame nextFrame:
-                return Update(state, nextFrame);
-            case OnOutOfArea _:
-                return state;
-            case OnCollisionBar _:
-                return state;
-            default:
-                throw new PatternMatchNotFoundException(msg);
+            case NextFrame nextFrame: return Update(this, nextFrame);
+            case OnOutOfArea: return this;
+            case OnCollisionBar: return this;
+            default: throw new PatternMatchNotFoundException(msg);
         }
     }
 
-    public BallState Update(BallState state, NextFrame msg) {
-        state.position += state.speed * Time.deltaTime;
+    BallState Update(BallState state, NextFrame msg) {
+        state.position += speed * Time.deltaTime;
         return state;
     }
 }
