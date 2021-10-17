@@ -17,7 +17,7 @@ public class App : MonoBehaviour {
             Unit.Default,
             Singleton<InitGame>.Instance,
             gameSceneRender,
-            gameSceneRender);
+            gameSceneRender.CreateState());
 
         inputSubscription.dispatcher = tea.Wrap<IGameSceneMessage, ChangedInput>((dispatcher, msg) => {
             dispatcher.Dispatch(new OnInput{ state = msg.state });

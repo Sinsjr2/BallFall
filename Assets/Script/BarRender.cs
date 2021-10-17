@@ -25,7 +25,7 @@ public class BarRender : MonoBehaviour, IRender<Unit, BarState, IBarMessage> {
     /// </summary>
     RectTransform barTransform;
 
-    public BarState CreateState(Unit initial) {
+    public BarState CreateState() {
 
         var centerPos = rightPos + (leftPos - rightPos) * 0.5f;
         return new BarState {

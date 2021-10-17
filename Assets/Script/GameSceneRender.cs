@@ -5,7 +5,7 @@ using TEA.Unity;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGameSceneMessage>, StateInitializer<Unit, GameSceneState> {
+public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGameSceneMessage> {
 
     [SerializeField]
     RenderCache<BarRender, Unit, BarState, IBarMessage> barRender;
@@ -38,9 +38,9 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
 
     IDispatcher<IGameSceneMessage> dispatcher;
 
-    public GameSceneState CreateState(Unit initial) {
+    public GameSceneState CreateState() {
         var ballInitState = ballRender.GetRender().CreateState(new Vector2(ballInstantiatePos.x, canvasRect.sizeDelta.y));
-        var barInitState = barRender.GetRender().CreateState(Unit.Default);
+        var barInitState = barRender.GetRender().CreateState();
         return new GameSceneState {
             ballInitState = ballInitState,
             ballState = new []{ ballInitState }.ToList(),
@@ -48,7 +48,7 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
             barState = barInitState,
             barInitState = barInitState,
             canvasSize = canvasRect.sizeDelta,
-            uiState = uiRender.GetRender().CreateState(Unit.Default),
+            uiState = uiRender.GetRender().CreateState(),
         };
     }
 

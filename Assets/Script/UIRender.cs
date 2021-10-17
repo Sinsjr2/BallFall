@@ -18,7 +18,7 @@ public class UIRender : MonoBehaviour, IRender<Unit, UIState, IUIMessage> {
     [SerializeField]
     Text scoreText;
 
-    public UIState CreateState(Unit initial) {
+    public UIState CreateState() {
         Assert.IsNotNull(statusText);
         Assert.IsNotNull(scoreText);
         return new UIState {

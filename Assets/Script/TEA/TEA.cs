@@ -21,15 +21,15 @@ namespace TEA {
         /// </summary>
         int maxRendering = 10;
 
-        public TEA(Input initial,
+        public TEA(Input input,
                    Message firstMsg,
                    IRender<Input, State, Message> render,
-                   StateInitializer<Input, State> initializer) {
+                   State initialState) {
 
             this.render = render;
 
-            currentState = initializer.CreateState(initial);
-            this.render.Setup(initial, this);
+            currentState = initialState;
+            this.render.Setup(input, this);
             Dispatch(firstMsg);
         }
 
