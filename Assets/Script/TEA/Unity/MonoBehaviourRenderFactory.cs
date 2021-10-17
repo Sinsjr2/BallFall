@@ -10,7 +10,7 @@ namespace TEA.Unity {
     ///   Renderの前に毎回呼び出すわけではないので注意してください。
     /// </summary>
     [Serializable]
-    public struct MonoBehaviourRenderFactory<T, Input, State, Message> :
+    public class MonoBehaviourRenderFactory<T, Input, State, Message> :
         IRender<Func<IDispatcher<Message>, T, T>, List<State>, KeyValuePair<int, Message>>
         where T : MonoBehaviour, IRender<Input, State, Message> {
 
