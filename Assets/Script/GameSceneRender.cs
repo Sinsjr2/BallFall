@@ -58,7 +58,7 @@ public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
             () => dispatcher.Dispatch(new OnChangedCanvasSize {canvasSize = canvasRect.sizeDelta}));
         ballRender.Setup(
             (d, ballRender) => {
-                ballRender.Setup(Unit.Default, d);
+                ballRender.Setup(d);
                 ballRender.transform.SetParent(ballRenderParent, false);
                 return ballRender;
             },
@@ -66,11 +66,9 @@ public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
                               new WrapBallMessage { id = indexAndMsg.Key, message = indexAndMsg.Value}));
 
         barRender.GetRender().Setup(
-            Unit.Default,
             dispatcher.Wrap((IBarMessage msg) => new WrapBarMessage {message = msg}));
 
         uiRender.GetRender().Setup(
-            Unit.Default,
             dispatcher.Wrap((IUIMessage msg) => new WrapUIMessage {message = msg}));
     }
 

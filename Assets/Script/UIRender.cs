@@ -28,7 +28,7 @@ public class UIRender : MonoBehaviour, IRender<UIState> {
         };
     }
 
-    public void Setup(Unit _, IDispatcher<IUIMessage> dispatcher) {
+    public void Setup(IDispatcher<IUIMessage> dispatcher) {
     }
 
     public void Render(UIState state) {

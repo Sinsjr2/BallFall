@@ -25,7 +25,7 @@ public class BallRender : MonoBehaviour , IRender<BallState> {
         return new BallState { position = instancePos, speed = speed, movesBall = false };
     }
 
-    public void Setup(Unit _, IDispatcher<IBallMessage> dispatcher) {
+    public void Setup(IDispatcher<IBallMessage> dispatcher) {
         this.dispatch = dispatcher;
         ballTransform = (RectTransform)transform;
     }
