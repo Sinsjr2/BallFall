@@ -11,7 +11,7 @@ namespace TEA.Unity {
     /// </summary>
     [Serializable]
     public class MonoBehaviourRenderFactory<T, State, Message> :
-        IRender<List<State>>
+        IRender<IEnumerable<State>>
         where T : MonoBehaviour, IRender<State> {
 
         struct DispatcherAndRender {
@@ -57,7 +57,7 @@ namespace TEA.Unity {
         /// <summary>
         ///   引数の配列は先頭から順番にrenderに渡していきます。
         /// </summary>
-        public void Render(List<State> state) {
+        public void Render(IEnumerable<State> state) {
             // 先にSetupを呼ぶ必要がある
             Assert.IsNotNull(cachedRender);
             using (var e = state.GetEnumerator()) {
