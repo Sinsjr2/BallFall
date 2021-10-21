@@ -15,7 +15,7 @@ public class App : MonoBehaviour {
         var buffer = new BufferDispatcher<IGameSceneMessage>();
         gameSceneRender.Setup(Unit.Default, buffer);
         var inputSubscription = new GameObject(nameof(InputSubscription)).AddComponent<InputSubscription>();
-        var tea = new TEA<Unit, GameSceneState, IGameSceneMessage>(
+        var tea = new TEA<GameSceneState, IGameSceneMessage>(
             gameSceneRender.CreateState(),
             gameSceneRender);
         buffer.SetDispatcher(tea);

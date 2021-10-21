@@ -6,7 +6,7 @@ using UnityEngine.Assertions;
 /// <summary>
 ///   バーに対応するゲームオブジェクトにアタッチして使用します。
 /// </summary>
-public class BarRender : MonoBehaviour, IRender<Unit, BarState, IBarMessage> {
+public class BarRender : MonoBehaviour, IRender<BarState> {
 
     /// <summary>
     ///   バーを左側に移動させたときの位置

@@ -5,16 +5,16 @@ using TEA.Unity;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGameSceneMessage> {
+public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
 
     [SerializeField]
-    RenderCache<BarRender, Unit, BarState, IBarMessage> barRender;
+    RenderCache<BarRender, BarState> barRender;
 
     [SerializeField]
-    MonoBehaviourRenderFactory<BallRender, Unit, BallState, IBallMessage> ballRender;
+    MonoBehaviourRenderFactory<BallRender, BallState, IBallMessage> ballRender;
 
     [SerializeField]
-    RenderCache<UIRender, Unit, UIState, IUIMessage> uiRender;
+    RenderCache<UIRender, UIState> uiRender;
 
     /// <summary>
     ///   ボールの生成するかの判定に使用します。

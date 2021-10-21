@@ -7,7 +7,7 @@ using UnityEngine.Assertions;
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 [DisallowMultipleComponent]
-public class BallRender : MonoBehaviour , IRender<Unit, BallState, IBallMessage> {
+public class BallRender : MonoBehaviour , IRender<BallState> {
 
     IDispatcher<IBallMessage> dispatch;
 

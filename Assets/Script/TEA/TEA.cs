@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 
 namespace TEA {
-    public class TEA<Input, State, Message> : IDispatcher<Message>
+    public class TEA<State, Message> : IDispatcher<Message>
         where State : IUpdate<State, Message> {
         State currentState;
 
-        readonly IRender<Input, State, Message> render;
+        readonly IRender<State> render;
         bool isCallingRender = false;
 
         /// <summary>
@@ -21,7 +21,7 @@ namespace TEA {
         /// </summary>
         int maxRendering = 10;
 
-        public TEA(State initialState, IRender<Input, State, Message> render) {
+        public TEA(State initialState, IRender<State> render) {
             this.render = render;
             currentState = initialState;
         }

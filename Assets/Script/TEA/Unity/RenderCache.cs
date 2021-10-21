@@ -8,8 +8,8 @@ namespace TEA.Unity {
     ///   前回書き込んだ状態と比較して、異なっていればRenderを呼び出すようにします。
     /// </summary>
     [Serializable]
-    public struct RenderCache<T, Input, State, Message> : IRender<Input, State, Message>
-        where T : class, IRender<Input, State, Message>
+    public struct RenderCache<T, State> : IRender<State>
+        where T : class, IRender<State>
         where State : IEquatable<State> {
 
         [SerializeField]

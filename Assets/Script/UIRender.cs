@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.UI;
 
-public class UIRender : MonoBehaviour, IRender<Unit, UIState, IUIMessage> {
+public class UIRender : MonoBehaviour, IRender<UIState> {
 
     /// <summary>
     ///   開始メッセージやゲームオーバー

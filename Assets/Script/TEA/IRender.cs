@@ -1,5 +1,5 @@
 namespace TEA {
-    public interface IRender<Input, State, Message> {
+    public interface IRender<State> {
 
         /// <summary>
         ///   stateの状態に従い描画を行います。
