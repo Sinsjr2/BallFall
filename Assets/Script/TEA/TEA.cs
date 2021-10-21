@@ -21,16 +21,9 @@ namespace TEA {
         /// </summary>
         int maxRendering = 10;
 
-        public TEA(Input input,
-                   Message firstMsg,
-                   IRender<Input, State, Message> render,
-                   State initialState) {
-
+        public TEA(State initialState, IRender<Input, State, Message> render) {
             this.render = render;
-
             currentState = initialState;
-            this.render.Setup(input, this);
-            Dispatch(firstMsg);
         }
 
         public void Dispatch(Message msg) {

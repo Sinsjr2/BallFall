@@ -12,12 +12,13 @@ public class App : MonoBehaviour {
 
     void Start() {
         Assert.IsNotNull(gameSceneRender);
+        var buffer = new BufferDispatcher<IGameSceneMessage>();
+        gameSceneRender.Setup(Unit.Default, buffer);
         var inputSubscription = new GameObject(nameof(InputSubscription)).AddComponent<InputSubscription>();
         var tea = new TEA<Unit, GameSceneState, IGameSceneMessage>(
-            Unit.Default,
-            Singleton<InitGame>.Instance,
-            gameSceneRender,
-            gameSceneRender.CreateState());
+            gameSceneRender.CreateState(),
+            gameSceneRender);
+        buffer.SetDispatcher(tea);
 
         inputSubscription.dispatcher = tea.Wrap((ChangedInput msg) => new OnInput{ state = msg.state });
     }

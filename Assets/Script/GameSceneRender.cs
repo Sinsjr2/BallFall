@@ -65,11 +65,11 @@ public class GameSceneRender : MonoBehaviour, IRender<Unit, GameSceneState, IGam
             dispatcher.Wrap((KeyValuePair<int, IBallMessage> indexAndMsg) =>
                               new WrapBallMessage { id = indexAndMsg.Key, message = indexAndMsg.Value}));
 
-        barRender.Setup(
+        barRender.GetRender().Setup(
             Unit.Default,
             dispatcher.Wrap((IBarMessage msg) => new WrapBarMessage {message = msg}));
 
-        uiRender.Setup(
+        uiRender.GetRender().Setup(
             Unit.Default,
             dispatcher.Wrap((IUIMessage msg) => new WrapUIMessage {message = msg}));
     }

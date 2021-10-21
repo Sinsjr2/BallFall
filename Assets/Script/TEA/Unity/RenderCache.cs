@@ -25,11 +25,6 @@ namespace TEA.Unity {
             return render;
         }
 
-        public void Setup(Input input, IDispatcher<Message> dispatcher) {
-            Assert.IsNotNull(render);
-            render.Setup(input, dispatcher);
-        }
-
         public void Render(State state) {
             if (prevState.Equals(state)) {
                 return;
