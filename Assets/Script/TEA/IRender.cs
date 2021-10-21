@@ -3,9 +3,7 @@ namespace TEA {
 
         /// <summary>
         ///   stateの状態に従い描画を行います。
-        ///   また、ボタンなどのコールバックが呼ばれた際のdispatcherの設定も行います。
-        ///   dispatcherを呼び出すとこのメソッドを呼び出します。
-        ///   よって、このメソッド内でdispatcherを呼び出す際はstateの状態によってdispatcherを呼び出さないようにする必要があります。
+        ///   ディスパッチするとこのメソッドを呼び出します。
         /// </summary>
         void Render(State state);
     }
