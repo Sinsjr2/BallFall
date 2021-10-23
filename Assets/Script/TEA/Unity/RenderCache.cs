@@ -8,7 +8,7 @@ namespace TEA.Unity {
     ///   前回書き込んだ状態と比較して、異なっていればRenderを呼び出すようにします。
     /// </summary>
     [Serializable]
-    public struct RenderCache<T, State> : IRender<State>
+    public class RenderCache<T, State> : IRender<State>
         where T : class, IRender<State>
         where State : IEquatable<State> {
 
