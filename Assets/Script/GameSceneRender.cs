@@ -38,7 +38,7 @@ public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
 
     public GameSceneState CreateState() {
         var ballInitState = ballRender.GetRender().CreateState(new Vector2(ballInstantiatePos.x, canvasRect.sizeDelta.y));
-        var barInitState = barRender.GetRender().CreateState();
+        var barInitState = barRender.Target.CreateState();
         return new GameSceneState {
             ballInitState = ballInitState,
             ballState = new []{ ballInitState }.ToList(),
@@ -46,7 +46,7 @@ public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
             barState = barInitState,
             barInitState = barInitState,
             canvasSize = canvasRect.sizeDelta,
-            uiState = uiRender.GetRender().CreateState(),
+            uiState = uiRender.Target.CreateState(),
         };
     }
 
@@ -65,11 +65,9 @@ public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
             dispatcher.Wrap((KeyValuePair<int, IBallMessage> indexAndMsg) =>
                               new WrapBallMessage { id = indexAndMsg.Key, message = indexAndMsg.Value}));
 
-        barRender.GetRender().Setup(
-            dispatcher.Wrap((IBarMessage msg) => new WrapBarMessage {message = msg}));
+        barRender.Target.Setup(dispatcher.Wrap((IBarMessage msg) => new WrapBarMessage {message = msg}));
 
-        uiRender.GetRender().Setup(
-            dispatcher.Wrap((IUIMessage msg) => new WrapUIMessage {message = msg}));
+        uiRender.Target.Setup(dispatcher.Wrap((IUIMessage msg) => new WrapUIMessage {message = msg}));
     }
 
     void OnDestroy() {

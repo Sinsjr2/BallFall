@@ -20,9 +20,11 @@ namespace TEA.Unity {
         /// </summary>
         State prevState;
 
-        public T GetRender() {
-            Assert.IsNotNull(render);
-            return render;
+        public T Target {
+            get {
+                Assert.IsNotNull(render);
+                return render;
+            }
         }
 
         public void Render(State state) {
