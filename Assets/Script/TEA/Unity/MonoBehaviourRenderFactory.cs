@@ -14,13 +14,21 @@ namespace TEA.Unity {
         IRender<IEnumerable<State>>
         where T : MonoBehaviour, IRender<State> {
 
-        struct DispatcherAndRender {
-            public T render;
-            public MessageWrapper<int, KeyValuePair<int, Message>, Message> dispatcher;
+        /// <summary>
+        ///  描画をする時にゲームオブジェクトをアクティブにします。
+        /// </summary>
+        public class GameObjectActivateRender : IRender<State> {
+            readonly T obj;
+            public readonly GameObject GO;
 
-            public DispatcherAndRender(T render, MessageWrapper<int, KeyValuePair<int, Message>, Message> dispatcher) {
-                this.render = render;
-                this.dispatcher = dispatcher;
+            public GameObjectActivateRender(T obj) {
+                this.obj = obj;
+                GO = obj.gameObject;
+            }
+
+            public void Render(State state) {
+                GO.SetActive(true);
+                obj.Render(state);
             }
         }
 
@@ -34,11 +42,9 @@ namespace TEA.Unity {
         /// <summary>
         ///   今までに作成されたrenderのキャッシュ
         /// </summary>
-        List<DispatcherAndRender> cachedRender;
+        List<GameObjectActivateRender> cachedRender;
 
-        IDispatcher<KeyValuePair<int, Message>> dispatcher;
-
-        Func<IDispatcher<Message>, T, T> initializer;
+        RenderFactory<GameObjectActivateRender, State, Message> factory;
 
         public T GetRender() {
             Assert.IsNotNull(render);
@@ -47,11 +53,10 @@ namespace TEA.Unity {
 
         public void Setup(Func<IDispatcher<Message>, T, T> initializer, IDispatcher<KeyValuePair<int, Message>> dispatcher) {
             Assert.IsNotNull(render);
-            this.initializer = initializer;
+            factory = new(dispatcher, d => new GameObjectActivateRender(initializer(d, render)));
             // 以前に初期化しているかもしれないのでリセットする
             Clear();
-            cachedRender = new List<DispatcherAndRender>();
-            this.dispatcher = dispatcher;
+            cachedRender = new List<GameObjectActivateRender>();
         }
 
         /// <summary>
@@ -60,39 +65,15 @@ namespace TEA.Unity {
         public void Render(IEnumerable<State> state) {
             // 先にSetupを呼ぶ必要がある
             Assert.IsNotNull(cachedRender);
-            using (var e = state.GetEnumerator()) {
-                int index = 0;
-                // キャッシュからrenderを呼び出す
-                foreach (var r in cachedRender) {
-                    // ステートがあるうちはrenderに渡す
-                    if (e.MoveNext()) {
-                        r.render.gameObject.SetActive(true);
-                        r.dispatcher.value = index;
-                        r.render.Render(e.Current);
-                    }
-                    else {
-                        // 不要な分はgameobjectをNonActiveにすることで持っておく
-                        // １つでもdisableなオブジェクトを見つけるとあとはすべてdisableになっていると仮定する
-                        var go = r.render.gameObject;
-                        if (!go.activeSelf) {
-                            break;
-                        }
-                        go.SetActive(false);
-                    }
-                    index++;
+            var nextRenderIndex = factory.ApplyToRender(cachedRender, state);
+            // 不要な分はgameobjectをNonActiveにすることで持っておく
+            // １つでもdisableなオブジェクトを見つけるとあとはすべてdisableになっていると仮定する
+            for (int i = nextRenderIndex; i < cachedRender.Count; i++) {
+                var go = cachedRender[i].GO;
+                if (!go.activeSelf) {
+                    break;
                 }
-                // 足りない分をインスタンス化する
-                for (; e.MoveNext(); index++) {
-                    var go = GameObject.Instantiate(render);
-                    var pair = new DispatcherAndRender(
-                        go,
-                        dispatcher.Wrap<int, KeyValuePair<int, Message>, Message>(
-                            (d, i, msg) => d.Dispatch(new KeyValuePair<int, Message>(i, msg))));
-                    pair.dispatcher.value = index;
-                    cachedRender.Add(pair);
-                    go = initializer(pair.dispatcher, go);
-                    go.Render(e.Current);
-                }
+                go.SetActive(false);
             }
         }
 
@@ -105,8 +86,8 @@ namespace TEA.Unity {
             }
             foreach (var r in cachedRender) {
                 // オブジェクトが破棄されていないときのみ処理する
-                if (r.render) {
-                    GameObject.Destroy(r.render.gameObject);
+                if (r.GO) {
+                    UnityEngine.Object.Destroy(r.GO);
                 }
             }
             cachedRender.Clear();

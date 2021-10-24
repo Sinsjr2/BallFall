@@ -57,7 +57,8 @@ public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
         notification.AddHandler(
             () => dispatcher.Dispatch(new OnChangedCanvasSize {canvasSize = canvasRect.sizeDelta}));
         ballRender.Setup(
-            (d, ballRender) => {
+            (d, prefab) => {
+                var ballRender = Instantiate(prefab);
                 ballRender.Setup(d);
                 ballRender.transform.SetParent(ballRenderParent, false);
                 return ballRender;
