@@ -34,8 +34,6 @@ public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
     [SerializeField]
     Vector2 ballInstantiatePos;
 
-    DimensionsChangedNotification notification;
-
     public GameSceneState CreateState() {
         var ballInitState = ballRender.GetRender().CreateState(new Vector2(ballInstantiatePos.x, canvasRect.sizeDelta.y));
         var barInitState = barRender.Target.CreateState();
@@ -53,9 +51,8 @@ public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
     public void Setup(Unit _, IDispatcher<IGameSceneMessage> dispatcher) {
         Assert.IsNotNull(ballRenderParent);
         Assert.IsNotNull(canvasRect);
-        notification = canvasRect.gameObject.AddComponent<DimensionsChangedNotification>();
-        notification.AddHandler(
-            () => dispatcher.Dispatch(new OnChangedCanvasSize {canvasSize = canvasRect.sizeDelta}));
+        canvasRect.gameObject.AddComponent<DimensionsChangedNotification>()
+            .Setup(dispatcher.Wrap((Unit _) =>new OnChangedCanvasSize {canvasSize = canvasRect.sizeDelta}));
         ballRender.Setup(
             (d, prefab) => {
                 var ballRender = Instantiate(prefab);
@@ -73,7 +70,6 @@ public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
 
     void OnDestroy() {
         ballRender.Clear();
-        notification.ClearHandler();
     }
 
     public void Render(GameSceneState state) {

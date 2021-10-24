@@ -1,32 +1,16 @@
-using System;
+using TEA;
+using UnityEngine.EventSystems;
 
-public class DimensionsChangedNotification: UnityEngine.EventSystems.UIBehaviour {
-    private Action handlers;
+#nullable enable
 
-    override protected void OnRectTransformDimensionsChange()
-    {
-        if (handlers == null) {
-            return;
-        }
-        handlers.Invoke();
+public class DimensionsChangedNotification: UIBehaviour {
+    IDispatcher<Unit>? dispatcher;
+
+    protected override void OnRectTransformDimensionsChange() {
+        dispatcher?.Dispatch(Unit.Default);
     }
 
-    #region "IHandler"
-    public void AddHandler(Action handler)
-    {
-        handlers += handler;
+    public void Setup(IDispatcher<Unit> dispatcher) {
+        this.dispatcher = dispatcher;
     }
-
-    public void RemoveHander(Action handler)
-    {
-        handler -= handler;
-    }
-
-    /// <summary>
-    ///   ハンドラに登録してあったメソッドを消します。
-    /// </summary>
-    public void ClearHandler() {
-        handlers = () => {};
-    }
-    #endregion
 }
