@@ -10,8 +10,7 @@ namespace TEA.Unity {
     ///   Renderの前に毎回呼び出すわけではないので注意してください。
     /// </summary>
     [Serializable]
-    public class MonoBehaviourRenderFactory<T, State, Message> :
-        IRender<IEnumerable<State>>
+    public class MonoBehaviourRenderFactory<T, State, Message> : IRender<IEnumerable<State>>, IDisposable
         where T : MonoBehaviour, IRender<State> {
 
         /// <summary>
@@ -53,9 +52,9 @@ namespace TEA.Unity {
 
         public void Setup(Func<IDispatcher<Message>, T, T> initializer, IDispatcher<KeyValuePair<int, Message>> dispatcher) {
             Assert.IsNotNull(render);
+            // １度しか呼び出していないか確認
+            Assert.IsNull(cachedRender);
             factory = new(dispatcher, d => new GameObjectActivateRender(initializer(d, render)));
-            // 以前に初期化しているかもしれないのでリセットする
-            Clear();
             cachedRender = new List<GameObjectActivateRender>();
         }
 
@@ -78,9 +77,9 @@ namespace TEA.Unity {
         }
 
         /// <summary>
-        ///   キャッシュを消します。
+        ///   所持しているゲームオブジェクトを全て削除します。
         /// </summary>
-        public void Clear() {
+        public void Dispose() {
             if (cachedRender is null) {
                 return;
             }

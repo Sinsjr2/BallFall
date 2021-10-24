@@ -69,7 +69,7 @@ public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
     }
 
     void OnDestroy() {
-        ballRender.Clear();
+        ballRender.Dispose();
     }
 
     public void Render(GameSceneState state) {
