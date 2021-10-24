@@ -6,7 +6,7 @@ using UnityEngine.Assertions;
 namespace TEA.Unity {
     /// <summary>
     ///   複数値があるオブジェクトをrenderに渡す際に使用します。
-    ///   このとき、Setupはインスタンス化した時に一度だけ呼び出します。
+    ///   このとき、レンダーの作成は一度だけ呼び出します。
     ///   Renderの前に毎回呼び出すわけではないので注意してください。
     /// </summary>
     [Serializable]
