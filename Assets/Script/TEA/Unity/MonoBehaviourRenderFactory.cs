@@ -17,7 +17,7 @@ namespace TEA.Unity {
         /// <summary>
         ///  描画をする時にゲームオブジェクトをアクティブにします。
         /// </summary>
-        public class GameObjectActivateRender : IRender<State> {
+        class GameObjectActivateRender : IRender<State> {
             readonly T obj;
             public readonly GameObject GO;
 
