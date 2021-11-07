@@ -48,7 +48,7 @@ public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
         };
     }
 
-    public void Setup(Unit _, IDispatcher<IGameSceneMessage> dispatcher) {
+    public void Setup(IDispatcher<IGameSceneMessage> dispatcher) {
         Assert.IsNotNull(ballRenderParent);
         Assert.IsNotNull(canvasRect);
         canvasRect.gameObject.AddComponent<DimensionsChangedNotification>()

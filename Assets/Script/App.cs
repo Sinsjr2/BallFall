@@ -13,7 +13,7 @@ public class App : MonoBehaviour {
     void Start() {
         Assert.IsNotNull(gameSceneRender);
         var buffer = new BufferDispatcher<IGameSceneMessage>();
-        gameSceneRender.Setup(Unit.Default, buffer);
+        gameSceneRender.Setup(buffer);
         var inputSubscription = new GameObject(nameof(InputSubscription)).AddComponent<InputSubscription>();
         var tea = new TEA<GameSceneState, IGameSceneMessage>(
             gameSceneRender.CreateState(),
