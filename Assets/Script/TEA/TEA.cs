@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 
 namespace TEA {
-    public class TEA<State, Message> : IDispatcher<Message>
+    public class TEA<State, Message> : ITEA<State, Message>
         where State : IUpdate<State, Message> {
-        State currentState;
 
         readonly IRender<State> render;
         bool isCallingRender = false;
@@ -21,42 +20,52 @@ namespace TEA {
         /// </summary>
         int maxRendering = 10;
 
+        State currentState;
+        public State Current {
+            get {
+                try {
+                    foreach (var msg in messages) {
+                        currentState = currentState.Update(msg);
+                    }
+                }
+                finally {
+                    messages.Clear();
+                }
+                return currentState;
+            }
+        }
+
         public TEA(State initialState, IRender<State> render) {
             this.render = render;
             currentState = initialState;
+            Render();
         }
 
         public void Dispatch(Message msg) {
+            messages.Add(msg);
             if (isCallingRender) {
-                messages.Add(msg);
                 return;
             }
+            Render();
+        }
+
+        void Render() {
             isCallingRender = true;
             try {
-                var newState = currentState.Update(msg);
-                render.Render(newState);
                 // 無限ループを回避するため
                 // レンダリングした回数
-                for (int renderCount = 0; true; renderCount++) {
-                    if (maxRendering < renderCount) {
-                        throw new InvalidOperationException($"レンダリングが指定された回数以上行われました。最大回数:{maxRendering}/n現在の状態:{currentState}");
-                    }
-                    foreach (var a in messages) {
-                        newState = newState.Update(a);
-                    }
-                    messages.Clear();
-                    render.Render(newState);
-                    // レンダー呼び出し中にdispatcherが呼ばれたかが変更されたか
+                for (int renderCount = 0; renderCount < maxRendering; renderCount++) {
+                    render.Render(Current);
+                    // レンダー呼び出し中にdispacherが呼ばれたかが変更されたか
                     if (messages.Count <= 0) {
-                        break;
+                        return;
                     }
                 }
-                currentState = newState;
-            }
-            finally {
-                // 例外が発生したあとでもdispatchが呼び出せるようにしておく
+                throw new InvalidOperationException($"レンダリングが指定された回数以上行われました。最大回数:{maxRendering}/n現在の状態:{currentState}");
+            } finally {
+                // 例外が発生したあとでもdispachが呼び出せるようにしておく
+                // もしくは、正常にreturnされた場合
                 isCallingRender = false;
-                messages.Clear();
             }
         }
     }
