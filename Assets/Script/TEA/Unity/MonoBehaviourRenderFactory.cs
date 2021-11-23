@@ -10,7 +10,7 @@ namespace TEA.Unity {
     ///   Renderの前に毎回呼び出すわけではないので注意してください。
     /// </summary>
     [Serializable]
-    public class MonoBehaviourRenderFactory<T, State, Message> : IRender<IEnumerable<State>>, IDisposable
+    public class MonoBehaviourRenderFactory<T, State, Message> : ITEAComponent<IEnumerable<State>, KeyValuePair<int, Message>>, IDisposable
         where T : MonoBehaviour, IRender<State> {
 
         /// <summary>
@@ -43,19 +43,24 @@ namespace TEA.Unity {
         /// </summary>
         List<GameObjectActivateRender> cachedRender;
 
-        RenderFactory<GameObjectActivateRender, State, Message> factory;
+        Func<IDispatcher<Message>, GameObjectActivateRender> createRender;
+        public Func<IDispatcher<Message>, T, T> Initializer {
+            set => createRender = d => new GameObjectActivateRender(value(d, render));
+        }
+
+        IDispatcher<KeyValuePair<int, Message>> dispatcher;
 
         public T GetRender() {
             Assert.IsNotNull(render);
             return render;
         }
 
-        public void Setup(Func<IDispatcher<Message>, T, T> initializer, IDispatcher<KeyValuePair<int, Message>> dispatcher) {
+        public void Setup(IDispatcher<KeyValuePair<int, Message>> dispatcher) {
             Assert.IsNotNull(render);
             // １度しか呼び出していないか確認
             Assert.IsNull(cachedRender);
-            factory = new(dispatcher, d => new GameObjectActivateRender(initializer(d, render)));
             cachedRender = new List<GameObjectActivateRender>();
+            this.dispatcher = dispatcher;
         }
 
         /// <summary>
@@ -64,7 +69,7 @@ namespace TEA.Unity {
         public void Render(IEnumerable<State> state) {
             // 先にSetupを呼ぶ必要がある
             Assert.IsNotNull(cachedRender);
-            var nextRenderIndex = factory.ApplyToRender(cachedRender, state);
+            var nextRenderIndex = cachedRender.ApplyToRender(dispatcher, createRender, state);
             // 不要な分はgameobjectをNonActiveにすることで持っておく
             // １つでもdisableなオブジェクトを見つけるとあとはすべてdisableになっていると仮定する
             for (int i = nextRenderIndex; i < cachedRender.Count; i++) {

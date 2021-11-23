@@ -3,22 +3,17 @@ using System.Collections.Generic;
 
 namespace TEA {
 
-    public class RenderFactory<TRender, State, Message> where TRender : IRender<State> {
-        readonly IDispatcher<KeyValuePair<int, Message>> dispatcher;
-        readonly Func<IDispatcher<Message>, TRender> createRender;
-
-        public RenderFactory(IDispatcher<KeyValuePair<int, Message>> dispatcher, Func<IDispatcher<Message>, TRender> createRender) {
-            this.dispatcher = dispatcher;
-            this.createRender = createRender;
-        }
-
+    public static class RenderFactory {
         /// <summary>
         ///  キャッシュに対して、あれば描画し、そうでなければ
         ///  新しくオブジェクトを作ります。
         ///  戻り値で処理したキャッシュの最後のインデックスを返します。
         /// </summary>
-        public int ApplyToRender(List<TRender> cachedRender,
-                                 IEnumerable<State> state) {
+        public static int ApplyToRender<TRender, State, Message>(
+            this List<TRender> cachedRender,
+            IDispatcher<KeyValuePair<int, Message>> dispatcher,
+            Func<IDispatcher<Message>, TRender> createRender,
+            IEnumerable<State> state) where TRender : IRender<State> {
             using var e = state.GetEnumerator();
             int i = 0;
             // キャッシュからrenderを呼び出す

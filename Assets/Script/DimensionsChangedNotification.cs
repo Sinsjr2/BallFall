@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 
 #nullable enable
 
-public class DimensionsChangedNotification: UIBehaviour {
+public class DimensionsChangedNotification: UIBehaviour, ISetup<Unit> {
     IDispatcher<Unit>? dispatcher;
 
     protected override void OnRectTransformDimensionsChange() {

@@ -23,5 +23,14 @@ namespace TEA {
             Func<TSource, TResult> selector) {
             return new MessageWrapper<TSource, TResult>(dispatcher, selector);
         }
+
+        /// <summary>
+        ///  メッセージの変換とディスパッチを設定します。
+        /// </summary>
+        public static void Setup<TSource, TResult>(this ISetup<TSource> target,
+                                                   IDispatcher<TResult> dispatcher,
+                                                   Func<TSource, TResult> selector) {
+            target.Setup(dispatcher.Wrap((TSource msg) => selector(msg)));
+        }
     }
 }

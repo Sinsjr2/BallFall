@@ -5,7 +5,7 @@ using TEA.Unity;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
+public class GameSceneRender : MonoBehaviour, ITEAComponent<GameSceneState, IGameSceneMessage> {
 
     [SerializeField]
     RenderCache<BarRender, BarState> barRender;
@@ -52,20 +52,18 @@ public class GameSceneRender : MonoBehaviour, IRender<GameSceneState> {
         Assert.IsNotNull(ballRenderParent);
         Assert.IsNotNull(canvasRect);
         canvasRect.gameObject.AddComponent<DimensionsChangedNotification>()
-            .Setup(dispatcher.Wrap((Unit _) =>new OnChangedCanvasSize {canvasSize = canvasRect.sizeDelta}));
-        ballRender.Setup(
-            (d, prefab) => {
-                var ballRender = Instantiate(prefab);
-                ballRender.Setup(d);
-                ballRender.transform.SetParent(ballRenderParent, false);
-                return ballRender;
-            },
-            dispatcher.Wrap((KeyValuePair<int, IBallMessage> indexAndMsg) =>
-                              new WrapBallMessage { id = indexAndMsg.Key, message = indexAndMsg.Value}));
+            .Setup(dispatcher, _ =>new OnChangedCanvasSize {canvasSize = canvasRect.sizeDelta});
+        ballRender.Initializer = (d, prefab) => {
+            var ballRender = Instantiate(prefab);
+            ballRender.transform.SetParent(ballRenderParent, false);
+            ballRender.Setup(d);
+            return ballRender;
+        };
+        ballRender.Setup(dispatcher, indexAndMsg => new WrapBallMessage { id = indexAndMsg.Key, message = indexAndMsg.Value });
 
-        barRender.Target.Setup(dispatcher.Wrap((IBarMessage msg) => new WrapBarMessage {message = msg}));
+        barRender.Target.Setup(dispatcher, msg => new WrapBarMessage {message = msg});
 
-        uiRender.Target.Setup(dispatcher.Wrap((IUIMessage msg) => new WrapUIMessage {message = msg}));
+        uiRender.Target.Setup(dispatcher, msg => new WrapUIMessage {message = msg});
     }
 
     void OnDestroy() {
