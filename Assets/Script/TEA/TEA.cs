@@ -63,7 +63,7 @@ namespace TEA {
                 }
                 throw new InvalidOperationException($"レンダリングが指定された回数以上行われました。最大回数:{maxRendering}/n現在の状態:{currentState}");
             } finally {
-                // 例外が発生したあとでもdispachが呼び出せるようにしておく
+                // 例外が発生したあとでもdispatchが呼び出せるようにしておく
                 // もしくは、正常にreturnされた場合
                 isCallingRender = false;
             }
